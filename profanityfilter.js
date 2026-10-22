@@ -1,6 +1,13 @@
 /* ------------------------------------------------------------------
    Profanity list: English + Afrikaans
    Add or remove words here to tune the filter.
+
+   Add <script> src="profanityfilter.js"></script to body of HTML
+   To call method:
+   bool = containstPofanity(string)
+   
+   True -> contains profanity
+   False -> Clean
 ------------------------------------------------------------------ */
 const PROFANITY_EN = [
   "fuck", "fucker", "fuckers", "fucking", "fucked", "fucks", "fuckoff", "fuckface", "fuckhead",
