@@ -8,6 +8,8 @@
 <style id="fontcss"></style>
 </head>
 <body>
+<div id="topbar">
+<div id="controls">
 <div class="row">
   <input type="text" id="input" placeholder="Type a word or phrase" aria-label="Word or phrase">
   <button class="primary" id="ok">OK</button>
@@ -24,7 +26,20 @@
   <div class="row" id="axes"></div>
   <div class="row" id="features"></div>
 </div>
+</div>
+<section id="sentencepanel" aria-label="Random sentence">
+  <div id="sentence" aria-live="polite"></div>
+  <div class="row sentence-actions">
+    <button id="generate">Generate</button>
+    <button class="primary" id="add">Add</button>
+  </div>
+  <span id="sentenceStatus" role="status"></span>
+</section>
+</div>
 <div id="stage"></div>
+<footer id="marquee" role="marquee" aria-label="Added sentences">
+  <div class="marquee-track" id="marqueeTrack"></div>
+</footer>
 
 <!-- Include your scripts properly -->
 <script src="profanityfilter.js" type="module" defer></script>
