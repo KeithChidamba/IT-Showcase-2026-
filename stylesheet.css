@@ -235,3 +235,135 @@ button.primary:hover {
   color: #000;
   border-color: rgba(0, 0, 0, 0.85);
 }
+
+/* ---------- top bar: existing controls on the left, sentence panel on the right ---------- */
+#topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+#controls {
+  flex: 1 1 480px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#sentencepanel {
+  flex: 0 1 380px;
+  margin-left: auto;
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+}
+
+#sentence {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: default;
+}
+
+.sentence-actions {
+  flex-wrap: nowrap;
+}
+
+#generate {
+  flex: 1;
+  justify-content: center;
+}
+
+#add {
+  min-width: 96px;
+  justify-content: center;
+}
+
+#sentenceStatus {
+  min-height: 1.5em;
+  color: var(--mut);
+  font-size: 13px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  border-color: var(--line);
+  transform: none;
+}
+
+button.primary:disabled:hover {
+  border-color: var(--primary);
+  opacity: 0.5;
+}
+
+@media (max-width: 720px) {
+  #sentencepanel {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+}
+
+/* ---------- marquee footer ---------- */
+/* Purely visual: it scrolls by itself and cannot be scrolled, hovered, selected or clicked. */
+#marquee {
+  flex: 0 0 auto;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  overflow: clip;
+  background: var(--field);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+.marquee-group {
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* font-family / weight / variation / features come from the same rule that styles the canvas text */
+.marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 32px;
+  padding: 0 16px;
+  white-space: nowrap;
+  font-size: 16px;
+}
+
+.marquee-item::after {
+  content: "\2022";
+  color: var(--mut);
+}

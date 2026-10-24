@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Initial Layout</title>
+<link rel="stylesheet" href="stylesheet.css">
+<style id="fontcss"></style>
+</head>
+<body>
+<div id="topbar">
+<div id="controls">
+<div class="row">
+  <input type="text" id="input" placeholder="Type a word or phrase" aria-label="Word or phrase">
+  <button class="primary" id="ok">OK</button>
+  <button id="sample">Fill sample</button>
+  <button id="clear">Clear</button>
+  <span id="status" role="status"></span>
+</div>
+<div id="fontpanel">
+  <div class="row">
+    <label class="filebtn">Load font (.woff .ttf .otf)<input type="file" id="file" accept=".woff,.woff2,.ttf,.otf" hidden></label>
+    <button id="reset" hidden>Use default font</button>
+    <span id="fontname">Using Arial Black</span>
+  </div>
+  <div class="row" id="axes"></div>
+  <div class="row" id="features"></div>
+</div>
+</div>
+<section id="sentencepanel" aria-label="Random sentence">
+  <div id="sentence" aria-live="polite"></div>
+  <div class="row sentence-actions">
+    <button id="generate">Generate</button>
+    <button class="primary" id="add">Add</button>
+  </div>
+  <span id="sentenceStatus" role="status"></span>
+</section>
+</div>
+<div id="stage"></div>
+<footer id="marquee" role="marquee" aria-label="Added sentences">
+  <div class="marquee-track" id="marqueeTrack"></div>
+</footer>
+
+<!-- Include your scripts properly -->
+<script src="profanityfilter.js" type="module" defer></script>
+<script src="script.js" type="module" defer></script>
+</body>
+</html>

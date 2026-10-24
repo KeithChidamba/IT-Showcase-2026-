@@ -1,4 +1,5 @@
 import { containsProfanity } from './profanityfilter.js';
+import { generateSentence } from './sentence.js';
 
 const Cell=2, Gap=3, Shrink=0.94, MinFont=7, Attempts=300, MaxWords=1500, Seed=12345;
 const LogoLines=["BE","YOND","THE","FRAME"];
@@ -21,7 +22,8 @@ const fontCss=size=>`${font.weight} ${size}px ${font.family}`;
 function rngFor(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
 
 function setFontCss(){
-  $("fontcss").textContent=`#stage text,.label{font-family:${font.family};font-weight:${font.weight};font-variation-settings:${font.vs};font-feature-settings:${font.fs}}`;
+  $("fontcss").textContent=`#stage text,.label,#marquee .marquee-item{font-family:${font.family};font-weight:${font.weight};font-variation-settings:${font.vs};font-feature-settings:${font.fs}}`;
+  renderMarquee();   // text widths change with the font, so rebuild the loop
 }
 
 /* ---------- font file parsing (fvar axes, GSUB/GPOS feature tags) ---------- */
@@ -283,6 +285,89 @@ $("ok").addEventListener("click",()=>{
 $("input").addEventListener("keydown",e=>{if(e.key==="Enter")$("ok").click()});
 $("sample").addEventListener("click",()=>{words=SAMPLE.slice();setStatus("");layout()});
 $("clear").addEventListener("click",()=>{words=[];setStatus("");layout()});
+
+/* ---------- random sentence + marquee ---------- */
+const MarqueeSpeed=70;          // pixels per second
+const addedSentences=[];        // sentences in the marquee, in the order they were added
+const addedKeys=new Set();      // normalised copies, used for the duplicate check
+let currentSentence="";
+
+const sentenceKey=s=>s.trim().replace(/\s+/g," ").toLowerCase();
+function setSentenceStatus(t){$("sentenceStatus").textContent=t}
+
+// The Add button is disabled whenever the displayed sentence is already in the marquee.
+function refreshAddState(msg){
+  const dup=addedKeys.has(sentenceKey(currentSentence));
+  $("add").disabled=!currentSentence||dup;
+  setSentenceStatus(msg||(dup?"This sentence is already in the marquee.":""));
+}
+function showNewSentence(){
+  currentSentence=generateSentence();
+  $("sentence").textContent=currentSentence;
+  refreshAddState();
+}
+
+// Seamless infinite loop: the sentences are laid out as one group, repeated until the group is at
+// least as wide as the footer, and two identical groups sit side by side. The track slides left by
+// exactly one group width and jumps back, so the join is invisible. Each sentence is only stored
+// once; the repeats are visual copies (hidden from screen readers).
+let marqueeAnim=null, marqueeGroupW=0;
+
+function makeGroup(repeats){
+  const g=document.createElement("div"); g.className="marquee-group";
+  for(let r=0;r<repeats;r++) for(const s of addedSentences){
+    const el=document.createElement("span"); el.className="marquee-item"; el.textContent=s;
+    g.appendChild(el);
+  }
+  return g;
+}
+function renderMarquee(){
+  const box=$("marquee"), track=$("marqueeTrack");
+
+  // remember how far the strip had scrolled (in pixels) so rebuilding doesn't make it jump back
+  let offsetPx=0;
+  if(marqueeAnim&&marqueeGroupW){
+    const dur=marqueeAnim.effect.getTiming().duration;
+    offsetPx=((marqueeAnim.currentTime%dur)/dur)*marqueeGroupW;
+  }
+  if(marqueeAnim){ marqueeAnim.cancel(); marqueeAnim=null; }
+  track.innerHTML="";
+  if(!addedSentences.length){ marqueeGroupW=0; return; }
+
+  const probe=makeGroup(1); track.appendChild(probe);
+  const oneW=probe.getBoundingClientRect().width;
+  const repeats=Math.max(1,Math.ceil(box.clientWidth/oneW));
+  track.innerHTML="";
+  const g1=makeGroup(repeats), g2=g1.cloneNode(true);
+  g2.setAttribute("aria-hidden","true");
+  track.append(g1,g2);
+
+  marqueeGroupW=g1.getBoundingClientRect().width;
+  const duration=(marqueeGroupW/MarqueeSpeed)*1000;
+  marqueeAnim=track.animate(
+    [{transform:"translateX(0)"},{transform:"translateX(-50%)"}],
+    {duration,iterations:Infinity,easing:"linear"}
+  );
+  marqueeAnim.currentTime=((offsetPx%marqueeGroupW)/marqueeGroupW)*duration;
+}
+
+$("generate").addEventListener("click",showNewSentence);
+$("add").addEventListener("click",()=>{
+  if(!currentSentence) return;
+  const key=sentenceKey(currentSentence);
+  if(addedKeys.has(key)){ refreshAddState(); return; }
+  addedKeys.add(key); addedSentences.push(currentSentence);
+  renderMarquee();
+  refreshAddState("Added to the marquee.");
+});
+
+let marqueeWidth=0;
+new ResizeObserver(()=>{
+  const w=$("marquee").clientWidth;
+  if(w!==marqueeWidth){ marqueeWidth=w; renderMarquee(); }
+}).observe($("marquee"));
+
+showNewSentence();   // start with one generated sentence displayed, marquee empty
 
 let resizeTimer;
 new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(layout,150)}).observe(stage);
