@@ -361,9 +361,16 @@ button.primary:disabled:hover {
   padding: 0 16px;
   white-space: nowrap;
   font-size: 16px;
+  /* The canvas always draws uppercase text, and display fonts like the loaded one often have
+     no lowercase letterforms, so the marquee shows uppercase too. Stored sentences are untouched. */
+  text-transform: uppercase;
 }
 
+/* Drawn with CSS instead of a "•" character, so it never depends on the loaded font's glyphs. */
 .marquee-item::after {
-  content: "\2022";
-  color: var(--mut);
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mut);
 }
