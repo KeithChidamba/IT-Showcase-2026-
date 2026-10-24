@@ -1,13 +1,6 @@
 /* ------------------------------------------------------------------
    Profanity list: English + Afrikaans
    Add or remove words here to tune the filter.
-
-   Add <script> src="profanityfilter.js"></script to body of HTML
-   To call method:
-   bool = containstPofanity(string)
-   
-   True -> contains profanity
-   False -> Clean
 ------------------------------------------------------------------ */
 const PROFANITY_EN = [
   "fuck", "fucker", "fuckers", "fucking", "fucked", "fucks", "fuckoff", "fuckface", "fuckhead",
@@ -93,8 +86,7 @@ const PROFANITY_EN = [
   "dominatrix", "bdsm", "kinky", "kink", "horny", "horney", "aroused", "vibrator", "lube", "sextoy",
   "nipple", "nipples", "areola", "areole", "rectum", "anus", "penetration", "footjob", "titjob",
   "bigtits", "bigass", "deepthroat", "hentai", "ecchi", "condom", "condoms", "enema", "coitus",
-  "coital", "copulate", "copulation", "fornicate", "fornication", "defecate", "defecation",
-  "excrement", "faeces", "feces", "fecal", "urine", "turd", "turds", "poop", "poo", "fart", "farts",
+  "coital", "copulate", "copulation", "defecate", "defecation", "excrement", "faeces", "feces", "fecal", "urine", "turd", "turds", "poop", "poo", "fart", "farts",
   "farting", "cocaine", "cocain", "heroin", "meth", "methamphetamine", "lsd", "mdma", "opium",
   "marijuana", "cannabis", "hashish", "dagga", "mandrax", "nyaope", "whoonga", "crackhead",
   "crackpipe", "junkie", "bong", "bongs", "boozer", "rape", "raped", "rapists", "molest",
@@ -143,13 +135,12 @@ function stripAccents(s) {
 
 function normalise(s) {
   let out = stripAccents(String(s).toLowerCase());
-  out = out.replace(/[\u200B-\u200D\u2060\uFEFF\u00AD]/g, ""); // zero-width / soft hyphen
+  out = out.replace(/[\u200B-\u200D\u2060\uFEFF\u00AD]/g, ""); 
   out = out.replace(/\*/g, "");
   out = out.replace(/[@4310$57+8(]/g, ch => LEET[ch] || ch);
   return out;
 }
 
-// "fuuuuck" -> "fuck", "naai" -> "nai" (the list is collapsed the same way, so both sides match)
 function collapse(s) {
   return s.replace(/(.)\1+/g, "$1");
 }
@@ -170,62 +161,21 @@ const BLOCKLIST = (() => {
 
 const COLLAPSED_BLOCKLIST = new Set([...BLOCKLIST].map(collapse));
 
-/* ------------------------------------------------------------------
-   The method
-   containsProfanity("some text") -> true if profanity is found, false if the text is clean.
-
-   Matching is by whole word, so "class" or "Scunthorpe" are not flagged, but spelling a
-   word out is caught:
-     1. Whole words:      "you fuuuck"            (repeated letters and leetspeak are normalised)
-     2. Glued words:      "f.u.c.k", "fu-ck", "f_u_c_k", "f*ck"  (separators removed)
-     3. Spaced-out words: "f u c k", "fu ck", "sh it", "f uck"   (short fragments joined)
------------------------------------------------------------------- */
-const MAX_FRAGMENTS = 12; // longest spelled-out word we try to rebuild
-
 function isBlocked(word) {
   if (BLOCKLIST.has(word)) return true;
-
-  // Stretched spellings ("fuuuck", "assss"). The word must actually contain repeated letters,
-  // and short results need a run of 3+ so innocent words ("as", "bob", "aas") are not caught.
-  const squeezed = collapse(word);
-  if (squeezed === word || !COLLAPSED_BLOCKLIST.has(squeezed)) return false;
-  return squeezed.length >= 4 || /(.)\1\1/.test(word);
+  if (COLLAPSED_BLOCKLIST.has(collapse(word))) return true;
+  return false;
 }
 
-function containsProfanity(text) {
-    if (typeof text !== "string" || text.trim() === "") return false;
-
-    const normalised = normalise(text);
-
-    // 1. Whole words (anything that is not a letter acts as a word break)
-    const tokens = normalised.split(/[^a-z]+/).filter(Boolean);
-    if (tokens.some(isBlocked)) return true;
-
-    // 2. Glue each space-delimited chunk together, dropping . - _ and other symbols.
-    //    Apostrophes are kept as breaks so contractions like "he'll" are not merged.
-    for (const chunk of normalised.split(/\s+/)) {
-        for (const piece of chunk.split("'")) {
-            const glued = piece.replace(/[^a-z]/g, "");
-            if (glued && isBlocked(glued)) return true;
-        }
-    }
-
-    // 3. Rebuild words that were spelled out with spaces. Only runs of short fragments
-    //    (3 letters or fewer) are joined, and a joined group must either be all 1-2 letter
-    //    fragments or contain a single letter. This keeps "The pen is blue" clean.
-    for (let i = 0; i < tokens.length; i++) {
-        let joined = "";
-        let hasSingle = false;
-        let allTiny = true;
-        for (let j = i; j < tokens.length && j < i + MAX_FRAGMENTS; j++) {
-            const t = tokens[j];
-            if (t.length > 3) break;
-            joined += t;
-            if (t.length === 1) hasSingle = true;
-            if (t.length > 2) allTiny = false;
-            if (j > i && (hasSingle || allTiny) && isBlocked(joined)) return true;
-        }
-    }
-
-    return false;
+/* ------------------------------------------------------------------
+   Exported function required by script.js
+------------------------------------------------------------------ */
+export function containsProfanity(text) {
+  const normalisedText = normalise(text);
+  const words = normalisedText.split(/\s+/);
+  for (const w of words) {
+    const cleanedWord = w.replace(/[^a-z]/g, "");
+    if (isBlocked(cleanedWord)) return true;
+  }
+  return false;
 }
