@@ -9,6 +9,10 @@ Words you add pack themselves inside the giant letters of *BEYOND THE FRAME*, wh
 
 <br>
 
+### 🔗 [**Open the live site →**](https://keithchidamba.github.io/IT-Showcase-2026-/)
+
+<br>
+
 ![HTML5](https://img.shields.io/badge/HTML5-111111?style=for-the-badge&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-111111?style=for-the-badge&logo=css3&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/Vanilla_JS-111111?style=for-the-badge&logo=javascript&logoColor=F7DF1E)
@@ -32,7 +36,7 @@ Words you add pack themselves inside the giant letters of *BEYOND THE FRAME*, wh
 
 ## 🚀 Getting started
 
-There is nothing to install and nothing to build.
+There is nothing to install and nothing to build. To just try it, open the **[live site](https://keithchidamba.github.io/IT-Showcase-2026-/)**. To run your own copy:
 
 1. **Get the files** and keep them together in one folder.
 2. **Serve the folder** with any static web server. The page uses ES modules, so opening the file by double-clicking it (`file://`) won't work.
@@ -54,7 +58,7 @@ The controls live in the column on the left. The big display on the right update
 | **Text box** | Type a word or short phrase. Press **Enter** or click **OK** to add it. |
 | **OK** | Adds the text to the display. It's shown in capitals. |
 | **Fill sample** | Loads a set of example words so you can see the effect straight away. |
-| **Clear** | Removes **every** word from the display. |
+| **Clear stage** | Removes **every** word from the display. |
 | **Clear input** | Empties **only the text box** and leaves the display alone. Handy after a voice recording. |
 
 > If a phrase is too long to fit inside the letters, you'll get a message and it won't be added. Try something shorter.
