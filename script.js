@@ -286,6 +286,78 @@ $("input").addEventListener("keydown",e=>{if(e.key==="Enter")$("ok").click()});
 $("sample").addEventListener("click",()=>{words=SAMPLE.slice();setStatus("");layout()});
 $("clear").addEventListener("click",()=>{words=[];setStatus("");layout()});
 
+/* ---------- voice input (Web Speech API, no libraries) ---------- */
+// The browser captures the microphone and does the speech-to-text itself. The result is put into
+// the normal input box, so the OK button's uppercasing, profanity check and fit check all still apply.
+(function voiceInput(){
+  const mic=$("mic"), label=$("miclabel"), voiceStatus=$("voiceStatus");
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const setVoice=t=>{voiceStatus.textContent=t};
+
+  if(!SR){
+    mic.disabled=true; $("voicelang").disabled=true; $("voiceauto").disabled=true;
+    setVoice("Voice input isn't supported in this browser. Try Chrome, Edge or Safari.");
+    return;
+  }
+
+  let rec=null, listening=false, gotResult=false;
+  const ERRORS={
+    "not-allowed":"Microphone access was blocked. Allow it in the browser's site settings.",
+    "service-not-allowed":"Microphone access was blocked. Allow it in the browser's site settings.",
+    "no-speech":"Didn't catch anything. Try again.",
+    "audio-capture":"No microphone was found.",
+    "network":"Speech recognition needs an internet connection.",
+    "language-not-supported":"That language isn't supported by this browser."
+  };
+
+  function setListening(on){
+    listening=on;
+    mic.classList.toggle("listening",on);
+    mic.setAttribute("aria-pressed",String(on));
+    label.textContent=on?"Stop":"Speak";
+  }
+
+  function start(){
+    rec=new SR();
+    rec.lang=$("voicelang").value;
+    rec.interimResults=true;    // show the words live as they are recognised
+    rec.continuous=false;       // stop by itself after one phrase
+    rec.maxAlternatives=1;
+    gotResult=false;
+
+    rec.onstart=()=>{setListening(true); setVoice("Listening…"); setStatus("");};
+    rec.onresult=e=>{
+      let text="", final=false;
+      for(let i=0;i<e.results.length;i++){
+        text+=e.results[i][0].transcript;
+        if(e.results[i].isFinal) final=true;
+      }
+      gotResult=true;
+      $("input").value=text.trim().replace(/[.,!?;:]+$/,"");
+      if(final) setVoice("Heard: \u201c"+$("input").value+"\u201d");
+    };
+    rec.onerror=e=>{ if(e.error!=="aborted") setVoice(ERRORS[e.error]||"Voice input error: "+e.error); };
+    rec.onend=()=>{
+      setListening(false);
+      if(gotResult&&$("input").value.trim()){
+        if($("voiceauto").checked) $("ok").click();
+        else $("input").focus();
+      }
+      rec=null;
+    };
+
+    try{ rec.start(); }catch(err){ setVoice("Couldn't start the microphone."); rec=null; }
+  }
+
+  mic.addEventListener("click",()=>{
+    if(listening&&rec) rec.stop();   // stop() still delivers what was heard so far
+    else if(!listening) start();
+  });
+
+  // changing language mid-listen would be ignored, so just end the current session
+  $("voicelang").addEventListener("change",()=>{ if(rec) rec.abort(); });
+})();
+
 /* ---------- random sentence + marquee ---------- */
 const MarqueeSpeed=70;          // pixels per second
 const addedSentences=[];        // sentences in the marquee, in the order they were added

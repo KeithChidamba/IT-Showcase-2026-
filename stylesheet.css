@@ -346,6 +346,50 @@ button.primary:disabled:hover {
   }
 }
 
+/* ---------- voice input ---------- */
+#voicerow {
+  gap: 10px;
+}
+
+#mic {
+  gap: 8px;
+}
+
+#mic.listening {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+  animation: micpulse 1.2s ease-in-out infinite;
+}
+
+@keyframes micpulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #mic.listening { animation: none; }
+}
+
+select {
+  height: 40px;
+  padding: 0 10px;
+  font-size: 14px;
+  background: var(--field);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+#voiceStatus {
+  flex: 1 1 100%;
+  min-height: 1.5em;
+  color: var(--mut);
+  font-size: 13px;
+}
+
 /* ---------- marquee footer ---------- */
 /* Purely visual: it scrolls by itself and cannot be scrolled, hovered, selected or clicked. */
 #marquee {

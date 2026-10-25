@@ -18,6 +18,20 @@
   <button id="clear">Clear</button>
   <span id="status" role="status"></span>
 </div>
+<div class="row" id="voicerow">
+  <button id="mic" type="button" aria-pressed="false" title="Speak a word or phrase">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg>
+    <span id="miclabel">Speak</span>
+  </button>
+  <select id="voicelang" aria-label="Speech language">
+    <option value="en-ZA">English (ZA)</option>
+    <option value="af-ZA">Afrikaans</option>
+    <option value="en-GB">English (UK)</option>
+    <option value="en-US">English (US)</option>
+  </select>
+  <label class="chip"><input type="checkbox" id="voiceauto"> Add automatically</label>
+  <span id="voiceStatus" role="status"></span>
+</div>
 <div id="fontpanel">
   <div class="row">
     <label class="filebtn">Load font (.woff .ttf .otf)<input type="file" id="file" accept=".woff,.woff2,.ttf,.otf" hidden></label>
