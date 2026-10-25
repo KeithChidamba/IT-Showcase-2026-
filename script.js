@@ -7,6 +7,8 @@ const SAMPLE=["BEYOND","THE","FRAME","DESIGN","CREATE","IDEAS","VISION","BOLD","
 const SKIP=new Set("ccmp locl mark mkmk kern rlig rclt curs dist abvm blwm abvs blws calt liga clig init medi fina isol rphf pref half akhn nukt abvf blwf cjct haln pres psts vatu cfar rvrn".split(" "));
 const AXIS_NAMES={wght:"Weight",wdth:"Width",slnt:"Slant",ital:"Italic",opsz:"Optical size"};
 
+const ClearPassword="H@ckathon";   // password asked for by "Clear stage" - change it here
+
 const DEFAULT_FONT={family:'"Arial Black","Segoe UI Black",Arial,sans-serif',weight:900,vs:"normal",fs:"normal"};
 let font={...DEFAULT_FONT};
 let words=[];
@@ -206,13 +208,16 @@ function tryPlace(st,free,cells,gw,gh,rng,out){
 }
 
 /* ---------- layout + render ---------- */
-function layout(){
+// Works out where the words in `list` would go without drawing anything. `logo` is null when the
+// stage is too small to lay out. layout() draws the real stage from this; the live "does it fit?"
+// check on the input box uses it to test a word that has not been added yet.
+function computeLayout(list){
   const placedWords=new Set();
   const w=stage.clientWidth, h=stage.clientHeight;
-  if(w<100||h<100) return placedWords;
+  if(w<100||h<100) return {placedWords,logo:null};
   const logo=buildLogo(w,h), placements=[];
 
-  if(words.length){
+  if(list.length){
     const gw=Math.ceil(w/Cell), gh=Math.ceil(h/Cell);
     const free=buildMask(logo.lines,gw,gh);
     const cells=[]; for(let i=0;i<free.length;i++) if(free[i]) cells.push(i);
@@ -221,8 +226,8 @@ function layout(){
       const start=logo.capPx*0.45;
       const maxK=start<=MinFont?0:Math.floor(Math.log(MinFont/start)/Math.log(Shrink));
       let k=0,fails=0,wi=0,count=0;
-      while(count<MaxWords&&fails<words.length){
-        const word=words[wi++%words.length]; let placed=false;
+      while(count<MaxWords&&fails<list.length){
+        const word=list[wi++%list.length]; let placed=false;
         for(let kk=k;kk<=maxK&&!placed;kk++){
           const size=start*Math.pow(Shrink,kk), firstV=rng()<0.35;
           for(let o=0;o<2&&!placed;o++){
@@ -236,8 +241,14 @@ function layout(){
       }
     }
   }
-  render(w,h,logo,placements);
-  return placedWords;
+  return {placedWords,w,h,logo,placements};
+}
+function layout(){
+  const r=computeLayout(words);
+  if(!r.logo) return r.placedWords;
+  render(r.w,r.h,r.logo,r.placements);
+  scheduleFitCheck();   // the stage (size, font, words) changed, so re-test what is in the input box
+  return r.placedWords;
 }
 
 function labelHtml(r,text,inv){
@@ -266,33 +277,83 @@ function render(w,h,logo,placements){
 }
 
 /* ---------- UI ---------- */
-function setStatus(t){$("status").textContent=t}
+const TOO_LONG="That text is too long to fit inside the letters.";
+const statusEl=$("status"), inputEl=$("input");
+function setStatus(t){statusEl.textContent=t}
+
+// Live "does it fit?" check. The limit is not a fixed number of characters: it depends on the stage
+// size and the loaded font, so this runs the same layout the OK button runs, on the words already
+// on the stage plus the text in the box (nothing is drawn). Over the limit, the text turns red and
+// the existing error message is shown. It covers typing and voice input alike, because voice
+// results are written into this same box.
+let fitTimer;
+function showFit(over){
+  inputEl.classList.toggle("over",over);
+  inputEl.setAttribute("aria-invalid",String(over));
+  if(over) setStatus(TOO_LONG);
+  else if(statusEl.textContent===TOO_LONG) setStatus("");
+}
+function updateFit(){
+  clearTimeout(fitTimer);
+  const text=inputEl.value.trim().toUpperCase();
+  let over=false;
+  if(text){
+    const r=computeLayout([...words,text]);
+    over=!!r.logo&&!r.placedWords.has(text);
+  }
+  showFit(over);
+}
+function scheduleFitCheck(){clearTimeout(fitTimer);fitTimer=setTimeout(updateFit,150)}
+// Editing the text makes any other old message (e.g. the profanity one) stale. The too-long message
+// is left for the fit check to remove, so it doesn't flicker while typing.
+function clearStaleStatus(){ if(statusEl.textContent!==TOO_LONG) setStatus(""); }
+inputEl.addEventListener("input",()=>{clearStaleStatus(); scheduleFitCheck();});
+
 $("ok").addEventListener("click",()=>{
-  const text=$("input").value.trim().toUpperCase();
+  const text=inputEl.value.trim().toUpperCase();
   if(!text) return;
-  
+
   if(containsProfanity(text)) {
     setStatus("Please enter a valid word without profanity.");
-    $("input").focus();
+    inputEl.focus();
     return;
   }
 
   words.push(text);
-  if(layout().has(text)){ $("input").value=""; setStatus(""); }
-  else{ words.pop(); layout(); setStatus("That text is too long to fit inside the letters."); }
-  $("input").focus();
+  if(layout().has(text)){ inputEl.value=""; setStatus(""); showFit(false); }
+  else{ words.pop(); layout(); showFit(true); }
+  inputEl.focus();
 });
-$("input").addEventListener("keydown",e=>{if(e.key==="Enter")$("ok").click()});
+inputEl.addEventListener("keydown",e=>{if(e.key==="Enter")$("ok").click()});
 $("sample").addEventListener("click",()=>{words=SAMPLE.slice();setStatus("");layout()});
-$("clear").addEventListener("click",()=>{words=[];setStatus("");layout()});
+
+function clearStage(){words=[];setStatus("");layout()}
+
+// "Clear stage" asks for a password first. The box is a plain text field on purpose (not
+// type="password"), so what is typed stays readable instead of turning into dots.
+const pwDialog=$("pwdialog"), pwInput=$("pwinput"), pwError=$("pwerror");
+$("clear").addEventListener("click",()=>{
+  pwInput.value=""; pwError.textContent="";
+  pwDialog.showModal();
+  pwInput.focus();
+});
+$("pwform").addEventListener("submit",e=>{
+  e.preventDefault();
+  if(pwInput.value.trim()===ClearPassword){ pwDialog.close(); clearStage(); }
+  else{ pwError.textContent="Incorrect password. Try again."; pwInput.focus(); pwInput.select(); }
+});
+$("pwcancel").addEventListener("click",()=>pwDialog.close());   // Esc also closes it
+
 $("clearinput").addEventListener("click",()=>{
-  $("input").value=""; setStatus(""); $("voiceStatus").textContent="";
-  $("input").focus();
+  inputEl.value=""; setStatus(""); $("voiceStatus").textContent="";
+  showFit(false);
+  inputEl.focus();
 });
 
 /* ---------- voice input (Web Speech API, no libraries) ---------- */
-// The browser captures the microphone and does the speech-to-text itself. The result is put into
-// the normal input box, so the OK button's uppercasing, profanity check and fit check all still apply.
+// The browser captures the microphone and does the speech-to-text itself. The result is only ever put
+// into the normal input box (never straight onto the stage), so the live too-long check above and the
+// OK button's uppercasing, profanity check and fit check all still apply.
 //
 // The API has no setting for how long a pause ends the recording, and in its default mode Chrome ends
 // the session after a short pause. So it runs in continuous mode (Chrome keeps listening) and our own
@@ -301,11 +362,11 @@ $("clearinput").addEventListener("click",()=>{
   const SilenceMs=4000;     // pause (in milliseconds) after your last word before recording stops
   const mic=$("mic"), label=$("miclabel"), voiceStatus=$("voiceStatus");
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  const setVoice=t=>{voiceStatus.textContent=t};
+  const setVoice=(t,isError)=>{voiceStatus.textContent=t; voiceStatus.classList.toggle("error",!!isError)};
 
   if(!SR){
-    mic.disabled=true; $("voicelang").disabled=true; $("voiceauto").disabled=true;
-    setVoice("Voice input isn't supported in this browser. Try Chrome, Edge or Safari.");
+    mic.disabled=true; $("voicelang").disabled=true;
+    setVoice("Voice input isn't supported in this browser. Try Chrome, Edge or Safari.",true);
     return;
   }
 
@@ -340,7 +401,7 @@ $("clearinput").addEventListener("click",()=>{
     rec.maxAlternatives=1;
     gotResult=false;
 
-    rec.onstart=()=>{setListening(true); setVoice("Listening…"); setStatus("");};
+    rec.onstart=()=>{setListening(true); setVoice("Listening…"); setStatus(""); updateFit();};
     rec.onresult=e=>{
       // in continuous mode e.results holds every phrase heard since start, so rebuild the whole text
       const parts=[];
@@ -351,22 +412,23 @@ $("clearinput").addEventListener("click",()=>{
       }
       gotResult=true;
       $("input").value=parts.join(" ").replace(/\s+/g," ").trim().replace(/[.,!?;:]+$/,"");
+      clearStaleStatus(); scheduleFitCheck();
       setVoice(final?"Heard: \u201c"+$("input").value+"\u201d":"Listening…");
       armSilenceTimer();
     };
-    rec.onerror=e=>{ if(e.error!=="aborted") setVoice(ERRORS[e.error]||"Voice input error: "+e.error); };
+    rec.onerror=e=>{ if(e.error!=="aborted") setVoice(ERRORS[e.error]||"Voice input error: "+e.error,true); };
     rec.onend=()=>{
       clearTimeout(silenceTimer);
       setListening(false);
       if(gotResult&&$("input").value.trim()){
         setVoice("Heard: \u201c"+$("input").value+"\u201d");
-        if($("voiceauto").checked) $("ok").click();
-        else $("input").focus();
+        updateFit();            // check the final text straight away, no waiting for the delay
+        $("input").focus();
       }
       rec=null;
     };
 
-    try{ rec.start(); }catch(err){ setVoice("Couldn't start the microphone."); rec=null; }
+    try{ rec.start(); }catch(err){ setVoice("Couldn't start the microphone.",true); rec=null; }
   }
 
   mic.addEventListener("click",()=>{
@@ -385,13 +447,15 @@ const addedKeys=new Set();      // normalised copies, used for the duplicate che
 let currentSentence="";
 
 const sentenceKey=s=>s.trim().replace(/\s+/g," ").toLowerCase();
-function setSentenceStatus(t){$("sentenceStatus").textContent=t}
+function setSentenceStatus(t,isError){const el=$("sentenceStatus"); el.textContent=t; el.classList.toggle("error",!!isError)}
 
 // The Add button is disabled whenever the displayed sentence is already in the marquee.
 function refreshAddState(msg){
   const dup=addedKeys.has(sentenceKey(currentSentence));
   $("add").disabled=!currentSentence||dup;
-  setSentenceStatus(msg||(dup?"This sentence is already in the marquee.":""));
+  if(msg) setSentenceStatus(msg);
+  else if(dup) setSentenceStatus("This sentence is already in the marquee.",true);
+  else setSentenceStatus("");
 }
 function showNewSentence(){
   currentSentence=generateSentence();

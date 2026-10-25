@@ -17,7 +17,7 @@
   <input type="text" id="input" placeholder="Type a word or phrase" aria-label="Word or phrase">
   <button class="primary" id="ok">OK</button>
   <button id="sample">Fill sample</button>
-  <button id="clear" title="Remove every word from the stage">Clear stage</button>
+  <button id="clear" title="Remove every word from the stage (password required)">Clear stage</button>
   <button id="clearinput" title="Empty the text box only (the stage is left as it is)">Clear input</button>
   <span id="status" role="status"></span>
 </div>
@@ -35,7 +35,6 @@
     <option value="en-GB">English (UK)</option>
     <option value="en-US">English (US)</option>
   </select>
-  <label class="chip" title="When ticked, the phrase is added to the stage as soon as you stop speaking, without pressing OK."><input type="checkbox" id="voiceauto"> Add automatically</label>
   <span id="voiceStatus" role="status"></span>
 </div>
 </div>
@@ -69,6 +68,19 @@
 <footer id="marquee" role="marquee" aria-label="Added sentences">
   <div class="marquee-track" id="marqueeTrack"></div>
 </footer>
+
+<dialog id="pwdialog" aria-labelledby="pwtitle">
+  <form id="pwform" autocomplete="off">
+    <h2 id="pwtitle">Clear stage</h2>
+    <p>Enter the password to remove every word from the stage.</p>
+    <input type="text" id="pwinput" placeholder="Password" aria-label="Password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div id="pwerror" role="alert"></div>
+    <div class="row dialog-actions">
+      <button type="button" id="pwcancel">Cancel</button>
+      <button type="submit" class="primary">Clear stage</button>
+    </div>
+  </form>
+</dialog>
 
 <!-- Include your scripts properly -->
 <script src="profanityfilter.js" type="module" defer></script>
