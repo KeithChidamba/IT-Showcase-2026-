@@ -7,7 +7,7 @@ const SAMPLE=["BEYOND","THE","FRAME","DESIGN","CREATE","IDEAS","VISION","BOLD","
 const SKIP=new Set("ccmp locl mark mkmk kern rlig rclt curs dist abvm blwm abvs blws calt liga clig init medi fina isol rphf pref half akhn nukt abvf blwf cjct haln pres psts vatu cfar rvrn".split(" "));
 const AXIS_NAMES={wght:"Weight",wdth:"Width",slnt:"Slant",ital:"Italic",opsz:"Optical size"};
 
-const ClearPassword="H@ckathon";   // password asked for by "Clear stage" - change it here
+const CanvasPassword="H@ckathon";   // password asked for by the Undo and Clear Canvas buttons - change it here
 
 const DEFAULT_FONT={family:'"Arial Black","Segoe UI Black",Arial,sans-serif',weight:900,vs:"normal",fs:"normal"};
 let font={...DEFAULT_FONT};
@@ -244,6 +244,7 @@ function computeLayout(list){
   return {placedWords,w,h,logo,placements};
 }
 function layout(){
+  refreshCanvasButtons();
   const r=computeLayout(words);
   if(!r.logo) return r.placedWords;
   render(r.w,r.h,r.logo,r.placements);
@@ -328,21 +329,49 @@ inputEl.addEventListener("keydown",e=>{if(e.key==="Enter")$("ok").click()});
 $("sample").addEventListener("click",()=>{words=SAMPLE.slice();setStatus("");layout()});
 
 function clearStage(){words=[];setStatus("");layout()}
+function undoWord(){words.pop();layout()}   // removes the most recently added word
 
-// "Clear stage" asks for a password first. The box is a plain text field on purpose (not
-// type="password"), so what is typed stays readable instead of turning into dots.
+// Undo is only useful when there is a word to remove.
+function refreshCanvasButtons(){ $("undo").disabled=!words.length; }
+refreshCanvasButtons();
+
+// Undo and Clear Canvas both ask for the password first, using one shared dialog. The box is a plain
+// text field on purpose (not type="password"), so what is typed stays readable instead of dots.
 const pwDialog=$("pwdialog"), pwInput=$("pwinput"), pwError=$("pwerror");
-$("clear").addEventListener("click",()=>{
+let pwAction=null;   // what to do once the right password has been entered
+function askPassword({title,message,confirm,onSuccess}){
+  pwAction=onSuccess;
+  $("pwtitle").textContent=title; $("pwmsg").textContent=message; $("pwok").textContent=confirm;
   pwInput.value=""; pwError.textContent="";
   pwDialog.showModal();
   pwInput.focus();
+}
+$("clear").addEventListener("click",()=>askPassword({
+  title:"Clear Canvas",
+  message:"Enter the password to remove every word from the canvas.",
+  confirm:"Clear Canvas",
+  onSuccess:clearStage
+}));
+$("undo").addEventListener("click",()=>{
+  if(!words.length) return;
+  askPassword({
+    title:"Undo",
+    message:"Enter the password to remove the most recent word (\u201c"+words[words.length-1]+"\u201d) from the canvas.",
+    confirm:"Undo",
+    onSuccess:undoWord
+  });
 });
 $("pwform").addEventListener("submit",e=>{
   e.preventDefault();
-  if(pwInput.value.trim()===ClearPassword){ pwDialog.close(); clearStage(); }
+  if(pwInput.value.trim()===CanvasPassword){
+    const action=pwAction; pwAction=null;
+    pwDialog.close();
+    if(action) action();
+  }
   else{ pwError.textContent="Incorrect password. Try again."; pwInput.focus(); pwInput.select(); }
 });
-$("pwcancel").addEventListener("click",()=>pwDialog.close());   // Esc also closes it
+$("pwcancel").addEventListener("click",()=>pwDialog.close());
+pwDialog.addEventListener("close",()=>{ pwAction=null; });   // Cancel / Esc: forget the pending action
 
 $("clearinput").addEventListener("click",()=>{
   inputEl.value=""; setStatus(""); $("voiceStatus").textContent="";

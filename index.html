@@ -17,9 +17,15 @@
   <input type="text" id="input" placeholder="Type a word or phrase" aria-label="Word or phrase">
   <button class="primary" id="ok">OK</button>
   <button id="sample">Fill sample</button>
-  <button id="clear" title="Remove every word from the stage (password required)">Clear stage</button>
-  <button id="clearinput" title="Empty the text box only (the stage is left as it is)">Clear input</button>
+  <button id="clearinput" title="Empty the text box only (the canvas is left as it is)">Clear input</button>
   <span id="status" role="status"></span>
+</div>
+</div>
+<div class="group">
+<h2 class="section-title">Canvas controls</h2>
+<div class="row">
+  <button id="undo" title="Remove the most recently added word (password required)">Undo</button>
+  <button id="clear" title="Remove every word from the canvas (password required)">Clear Canvas</button>
 </div>
 </div>
 <div class="group">
@@ -71,13 +77,13 @@
 
 <dialog id="pwdialog" aria-labelledby="pwtitle">
   <form id="pwform" autocomplete="off">
-    <h2 id="pwtitle">Clear stage</h2>
-    <p>Enter the password to remove every word from the stage.</p>
+    <h2 id="pwtitle">Clear Canvas</h2>
+    <p id="pwmsg">Enter the password to remove every word from the canvas.</p>
     <input type="text" id="pwinput" placeholder="Password" aria-label="Password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
     <div id="pwerror" role="alert"></div>
     <div class="row dialog-actions">
       <button type="button" id="pwcancel">Cancel</button>
-      <button type="submit" class="primary">Clear stage</button>
+      <button type="submit" class="primary" id="pwok">Clear Canvas</button>
     </div>
   </form>
 </dialog>
