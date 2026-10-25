@@ -9,7 +9,7 @@ Words you add pack themselves inside the giant letters of *BEYOND THE FRAME*, wh
 
 <br>
 
-### 🔗 [**Open the live site →**](https://keithchidamba.github.io/IT-Showcase-2026-/)
+### 🔗 [**Open the live site →**](https://keithchidamba.github.io/IT-Showcase-2026-/)  ·  [**View the code on GitHub →**](https://github.com/KeithChidamba/IT-Showcase-2026-)
 
 <br>
 
@@ -38,11 +38,15 @@ Words you add pack themselves inside the giant letters of *BEYOND THE FRAME*, wh
 
 There is nothing to install and nothing to build. To just try it, open the **[live site](https://keithchidamba.github.io/IT-Showcase-2026-/)**. To run your own copy:
 
-1. **Get the files** and keep them together in one folder.
+1. **Get the files** by cloning the repo (or downloading it as a ZIP from [GitHub](https://github.com/KeithChidamba/IT-Showcase-2026-)) and keeping them together in one folder:
+   ```bash
+   git clone https://github.com/KeithChidamba/IT-Showcase-2026-.git
+   cd IT-Showcase-2026-
+   ```
 2. **Serve the folder** with any static web server. The page uses ES modules, so opening the file by double-clicking it (`file://`) won't work.
-   - **VS Code:** right-click `Initial Layout.html` and choose **Open with Live Server**.
+   - **VS Code:** right-click `index.html` and choose **Open with Live Server**.
    - **Python:** run `python -m http.server` in the folder, then visit `http://localhost:8000`.
-   - **GitHub Pages:** enable Pages for the repo. The page is `Initial Layout.html`, so either add that to the URL (`/Initial%20Layout.html`) or rename the file to `index.html` to make it the home page.
+   - **GitHub Pages:** the repo is published this way. The page is `index.html`, so it loads at the site's root address with no filename needed. To host your own copy, fork the repo and turn on Pages in its settings.
 3. **Allow the microphone** if you want to use voice input (see [Voice input](#-voice-input)).
 
 ---
@@ -109,7 +113,8 @@ The same sentence can't be added twice. If it's already in the marquee, **Add** 
 
 ```
 IT-Showcase-2026-/
-├── Initial Layout.html     The page and all the controls
+├── .github/workflows/      GitHub Actions workflows
+├── index.html              The page and all the controls
 ├── stylesheet.css          Layout, theme (light and dark) and styling
 ├── script.js               Word packing, font loading, voice input, marquee
 ├── sentence.js             The random sentence generator
@@ -155,5 +160,7 @@ The project is built and tested for a current **Chrome**. It uses standard brows
 <br>
 
 *Made for IT Showcase 2026.*
+
+[Live site](https://keithchidamba.github.io/IT-Showcase-2026-/) · [Source on GitHub](https://github.com/KeithChidamba/IT-Showcase-2026-)
 
 </div>
