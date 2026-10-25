@@ -1,3 +1,80 @@
+Claude
+Diagnosing the browser speech recognition network error.
+Diagnosing the browser speech recognition network error.
+The network error comes from the browser’s speech service, not from your page, so hosting doesn’t change it. Let me check the current known causes and whether there’s an on-device option before I change anything.
+
+Ran 4 commands, searched the web, shared files
+I’ve updated script.js so voice input switches to the browser’s on-device recognition when the online service fails. I tested the switch with a mocked speech API, not a real microphone, so please try it in your browser.
+
+Why it failed: the network error doesn’t mean your page or hosting is offline. The browser’s speech recognition normally sends audio to a speech server run by the browser vendor, and in your case the browser couldn’t reach it. Live Server and GitHub Pages behave the same here because the connection that fails is between the browser and that service. Common causes:
+
+Brave: it blocks the speech service entirely, so this error is expected there.
+Chromium builds (Linux distro Chromium, Opera, some others): they lack the keys needed to use the Google speech service.
+Network blockers: a VPN, firewall, school or work network, or an ad-blocker can block the Google endpoint.
+What the update does: on a network error it switches to on-device recognition, which needs no internet once the language pack is installed. Chrome and Edge now support this. The first time, it checks whether the language pack is installed and downloads it if not, with a status message while it does. It then restarts listening on-device and keeps using that mode for the rest of the session. The check and download happen automatically, so you only need to click Speak again if the status line says it couldn’t start.
+
+Things to know
+
+Browser version: the on-device mode needs a recent Chrome or Edge, around Chrome 139 or later. On older versions, or in Brave, there’s no fallback and you’ll see a clearer message listing the likely causes.
+Language packs: not every language has an on-device pack. If English (ZA) or Afrikaans isn’t available, the status line says so, and English (US) or English (UK) are the safest choices.
+Brave: if you’re using it, the fallback may not work either. Test in Chrome or Edge to confirm.
+If it still fails, tell me which browser and version you’re using and what the voice status line says, and I can narrow it down.
+
+
+Script
+JS 
+i sued chrome with the old js, you can disregard the new solution. Rather extend the dead silence time that stops the recording, currently it stops the recording too soon and i have to speak too fast
+
+Fixing premature cutoffs in speech recognition timeouts.
+Fixing premature cutoffs in speech recognition timeouts.
+Understood, I’ll drop the on-device fallback and go back to the original voice code. The browser’s speech API doesn’t expose a silence setting, so Chrome decides when you’ve stopped talking. The fix is to run it in continuous mode, where Chrome stops ending the session on its own, and add my own silence timer that stops it only after a pause you control.
+
+Ran 2 commands, shared files
+I’ve updated script.js. The on-device fallback is removed, and the voice code is the original version with two changes so you can pause longer.
+
+Continuous mode: Chrome no longer ends the session on its own after a short pause.
+Silence timer: recording stops only after 4 seconds with nothing new heard, and the countdown restarts every time Chrome picks up another word.
+I tested the timer with a mocked speech API, not a real microphone. The text from separate phrases is joined into one string, so a pause in the middle of a sentence doesn’t overwrite what you already said.
+
+Changing the pause length: at the top of the voice block in script.js there’s const SilenceMs=4000;. Raise it for a longer pause, for example 6000 for 6 seconds, or lower it if it feels sluggish to finish.
+
+Things to know
+
+Stopping early: the Stop button still ends recording immediately, and keeps whatever was heard so far.
+No speech at all: if you say nothing, Chrome gives up by itself after roughly 8 seconds with its “Didn’t catch anything” message. The silence timer only starts once the first word is heard.
+Session length: Chrome can end a continuous session after about a minute, which won’t matter for short words and phrases.
+
+Script
+JS 
+add a clear input button next to "Clear" to optionally clear the input box after recording. add small headings between recording ui, "fill sample,clear","Font loading","marquee additions", add hover text to checkbox for "add automatically"
+
+Ran 2 commands, read a file
+The layout looks right. One small cleanup: the empty voice status line leaves extra space under the voice row, so I’ll collapse it when it has no text.
+
+Ran a command, shared files
+All three changes are in Initial Layout.html, stylesheet.css and script.js. I tested the Clear input button and checked the layout in a headless browser. I haven’t tested it by hand in your own browser.
+
+Clear input button: it sits right after Clear and empties only the text box. It also wipes the old “Heard: …” message and puts the cursor back in the box, ready for the next recording. The existing Clear still removes every word from the stage.
+Small headings: each section now has a small, uppercase, muted heading above it: Text input (the box with OK, Fill sample, Clear, Clear input), Voice input, Font loading and Marquee additions. They’re plain <h2 class="section-title"> elements, so you can rename them by editing the text in the HTML.
+Hover text: hovering “Add automatically” shows: “When ticked, the phrase is added to the stage as soon as you stop speaking, without pressing OK.” I also added short hover text to Clear and Clear input so it’s clear which does what.
+I made one small extra change: the empty voice status line no longer takes up space under the voice row until it has something to say.
+
+
+Initial layout
+Code · HTML 
+
+Stylesheet
+Code · CSS 
+
+Script
+JS 
+
+
+
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+Stylesheet · CSS
 :root {
   --bg: #f8f9fa;
   --fg: #1a1a1a;
@@ -346,6 +423,24 @@ button.primary:disabled:hover {
   }
 }
 
+/* ---------- section headings ---------- */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mut);
+}
+
 /* ---------- voice input ---------- */
 #voicerow {
   gap: 10px;
@@ -383,9 +478,12 @@ select {
   cursor: pointer;
 }
 
+#voiceStatus:empty {
+  display: none;
+}
+
 #voiceStatus {
   flex: 1 1 100%;
-  min-height: 1.5em;
   color: var(--mut);
   font-size: 13px;
 }
@@ -441,3 +539,6 @@ select {
   border-radius: 50%;
   background: var(--mut);
 }
+ 
+
+Claude finished the response

@@ -285,11 +285,20 @@ $("ok").addEventListener("click",()=>{
 $("input").addEventListener("keydown",e=>{if(e.key==="Enter")$("ok").click()});
 $("sample").addEventListener("click",()=>{words=SAMPLE.slice();setStatus("");layout()});
 $("clear").addEventListener("click",()=>{words=[];setStatus("");layout()});
+$("clearinput").addEventListener("click",()=>{
+  $("input").value=""; setStatus(""); $("voiceStatus").textContent="";
+  $("input").focus();
+});
 
 /* ---------- voice input (Web Speech API, no libraries) ---------- */
 // The browser captures the microphone and does the speech-to-text itself. The result is put into
 // the normal input box, so the OK button's uppercasing, profanity check and fit check all still apply.
+//
+// The API has no setting for how long a pause ends the recording, and in its default mode Chrome ends
+// the session after a short pause. So it runs in continuous mode (Chrome keeps listening) and our own
+// timer stops it once nothing new has been heard for SilenceMs. Raise this number to allow longer pauses.
 (function voiceInput(){
+  const SilenceMs=4000;     // pause (in milliseconds) after your last word before recording stops
   const mic=$("mic"), label=$("miclabel"), voiceStatus=$("voiceStatus");
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const setVoice=t=>{voiceStatus.textContent=t};
@@ -300,7 +309,7 @@ $("clear").addEventListener("click",()=>{words=[];setStatus("");layout()});
     return;
   }
 
-  let rec=null, listening=false, gotResult=false;
+  let rec=null, listening=false, gotResult=false, silenceTimer=null;
   const ERRORS={
     "not-allowed":"Microphone access was blocked. Allow it in the browser's site settings.",
     "service-not-allowed":"Microphone access was blocked. Allow it in the browser's site settings.",
@@ -317,29 +326,40 @@ $("clear").addEventListener("click",()=>{words=[];setStatus("");layout()});
     label.textContent=on?"Stop":"Speak";
   }
 
+  // (Re)start the countdown. Called every time the browser reports new speech, interim or final.
+  function armSilenceTimer(){
+    clearTimeout(silenceTimer);
+    silenceTimer=setTimeout(()=>{ if(rec) rec.stop(); },SilenceMs);
+  }
+
   function start(){
     rec=new SR();
     rec.lang=$("voicelang").value;
     rec.interimResults=true;    // show the words live as they are recognised
-    rec.continuous=false;       // stop by itself after one phrase
+    rec.continuous=true;        // keep listening through pauses; our timer decides when to stop
     rec.maxAlternatives=1;
     gotResult=false;
 
     rec.onstart=()=>{setListening(true); setVoice("Listening…"); setStatus("");};
     rec.onresult=e=>{
-      let text="", final=false;
+      // in continuous mode e.results holds every phrase heard since start, so rebuild the whole text
+      const parts=[];
+      let final=false;
       for(let i=0;i<e.results.length;i++){
-        text+=e.results[i][0].transcript;
-        if(e.results[i].isFinal) final=true;
+        parts.push(e.results[i][0].transcript.trim());
+        final=e.results[i].isFinal;
       }
       gotResult=true;
-      $("input").value=text.trim().replace(/[.,!?;:]+$/,"");
-      if(final) setVoice("Heard: \u201c"+$("input").value+"\u201d");
+      $("input").value=parts.join(" ").replace(/\s+/g," ").trim().replace(/[.,!?;:]+$/,"");
+      setVoice(final?"Heard: \u201c"+$("input").value+"\u201d":"Listening…");
+      armSilenceTimer();
     };
     rec.onerror=e=>{ if(e.error!=="aborted") setVoice(ERRORS[e.error]||"Voice input error: "+e.error); };
     rec.onend=()=>{
+      clearTimeout(silenceTimer);
       setListening(false);
       if(gotResult&&$("input").value.trim()){
+        setVoice("Heard: \u201c"+$("input").value+"\u201d");
         if($("voiceauto").checked) $("ok").click();
         else $("input").focus();
       }
