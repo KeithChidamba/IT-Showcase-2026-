@@ -35,10 +35,11 @@ const N=d=>(+d.toFixed(3)).toString();
 // A font with no weight axis gets the same weight for every variant (the effect is simply not visible).
 const LIGHT_STEPS={thin:0,extralight:1/3,light:2/3};                       // fraction of the way from min to regular
 const HEAVY_STEPS={medium:0.2,semibold:0.4,bold:0.6,extrabold:0.8,heavy:1}; // fraction of the way from regular to max
-function wt(variant){
-  if(variant in LIGHT_STEPS) return Math.round(font.min+(font.reg-font.min)*LIGHT_STEPS[variant]);
-  if(variant in HEAVY_STEPS) return Math.round(font.reg+(font.max-font.reg)*HEAVY_STEPS[variant]);
-  return font.reg;
+// f = the font to work the weight out for: the loaded font by default, DEFAULT_FONT for the sentence box.
+function wt(variant,f=font){
+  if(variant in LIGHT_STEPS) return Math.round(f.min+(f.reg-f.min)*LIGHT_STEPS[variant]);
+  if(variant in HEAVY_STEPS) return Math.round(f.reg+(f.max-f.reg)*HEAVY_STEPS[variant]);
+  return f.reg;
 }
 const fontCss=(size,variant="regular")=>`${wt(variant)} ${size}px ${font.family}`;
  
@@ -61,13 +62,13 @@ function makeEntry(raw,salt=0){
 }
 // Fills an HTML element with one <span> per styled run (weight + colour from the rules). The runs sit
 // inside a single wrapper span, so a flex parent (#sentence, .marquee-item) doesn't drop the spaces.
-function fillStyled(el,text,salt=0){
+function fillStyled(el,text,salt=0,f=font){
   el.textContent="";
   const wrap=document.createElement("span"); el.appendChild(wrap);
   for(const r of styledRuns(text,salt,false)){
     const s=document.createElement("span");
     s.textContent=r.t;
-    s.style.fontWeight=wt(r.v);
+    s.style.fontWeight=wt(r.v,f);
     if(r.fill) s.style.color=r.fill;
     wrap.appendChild(s);
   }
@@ -76,8 +77,7 @@ function fillStyled(el,text,salt=0){
 function rngFor(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
  
 function setFontCss(){
-  $("fontcss").textContent=`#stage text,.label,#sentence,#marquee .marquee-item{font-family:${font.family};font-variation-settings:${font.vs};font-feature-settings:${font.fs}}`;
-  if(currentSentence) fillStyled($("sentence"),currentSentence);   // weights depend on the font
+  $("fontcss").textContent=`#stage text,.label,#marquee .marquee-item{font-family:${font.family};font-variation-settings:${font.vs};font-feature-settings:${font.fs}}`;
   renderMarquee();   // text widths change with the font, so rebuild the loop
 }
  
@@ -624,7 +624,7 @@ function refreshAddState(msg){
 }
 function showNewSentence(){
   currentSentence=generateSentence();
-  fillStyled($("sentence"),currentSentence);
+  fillStyled($("sentence"),currentSentence,0,DEFAULT_FONT);   // the sentence box always uses the default font
   refreshAddState();
 }
  

@@ -330,6 +330,8 @@ body.menu-hidden #menutoggle {
   color: var(--fg);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  /* Always the default font: a loaded font only changes the canvas and the scrolling marquee */
+  font-family: "Archivo", "Arial Black", "Segoe UI Black", Arial, sans-serif;
   font-size: 16px;
   font-weight: 400;   /* regular is the main variant; script.js sets each letter's weight from the rules */
   cursor: default;
@@ -560,3 +562,8 @@ select {
 .dialog-actions {
   justify-content: flex-end;
 }
+
+#sample {
+  display: none;
+}
+
