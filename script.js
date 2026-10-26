@@ -1,18 +1,24 @@
-import { containsProfanity } from './profanityfilter.js';
+import { validateInput } from './validate.js';
 import { generateSentence } from './sentence.js';
+import { styleText, isDark } from './Rules.js';
  
 const Cell=2, Gap=3, Shrink=0.94, MinFont=7, Attempts=300, MaxWords=1500, Seed=12345;
 const MaxWordsInverted=3000;   // inverted mode fills the (much larger) space around the letters
-let inverted=false;
-let resizeTimer;               // debounces layout() after the stage resizes or the menu toggles            // false: words fill the letters. true: words fill the space around them
+let inverted=false;            // false: words fill the letters. true: words fill the space around them
+let resizeTimer;               // debounces layout() after the stage resizes or the menu toggles
 const LogoLines=["BE","YOND","THE","FRAME"];
-const SAMPLE=["BEYOND","THE","FRAME","DESIGN","CREATE","IDEAS","VISION","BOLD","FUTURE","STUDIO","ART","MAKE","SHAPE","MOTION","LIGHT","SPACE","COLOR","STORY","CRAFT","DREAM","BUILD"];
+const SAMPLE=["BEYOND","THE","FRAME","DESIGN","CREATE","IDEAS","VISION","BOLD","FUTURE","STUDIO","ART","MAKE","SHAPE","MOTION","LIGHT","SPACE","COLOR","STORY","CRAFT","DREAM","BUILD",
+  // a few that show off the styling rules
+  "Congrats!","Eduvos","I love design","thin","dyslexia","Well done!","blue","red","Keith Chidamba","Hello, I am here."];
 const SKIP=new Set("ccmp locl mark mkmk kern rlig rclt curs dist abvm blwm abvs blws calt liga clig init medi fina isol rphf pref half akhn nukt abvf blwf cjct haln pres psts vatu cfar rvrn".split(" "));
 const AXIS_NAMES={wght:"Weight",wdth:"Width",slnt:"Slant",ital:"Italic",opsz:"Optical size"};
  
 const CanvasPassword="H@ckathon";   // password asked for by the Undo and Clear Canvas buttons - change it here
  
-const DEFAULT_FONT={family:'"Arial Black","Segoe UI Black",Arial,sans-serif',weight:900,vs:"normal",fs:"normal"};
+// Default font: Archivo, a variable font (fonts/Archivo-Variable.woff, declared in stylesheet.css) whose weight axis
+// runs 100-900. min/reg/max are the weights the four variants are built from (see wt() below).
+const DEFAULT_NAME="Using Archivo (variable font)";
+const DEFAULT_FONT={family:'"Archivo VF","Arial Black","Segoe UI Black",Arial,sans-serif',min:100,reg:400,max:900,vs:"normal",fs:"normal"};
 let font={...DEFAULT_FONT};
 let words=[];
 let loaded=null;   // {buf, axes, feats, name, face, fam}
@@ -22,12 +28,36 @@ const $=id=>document.getElementById(id);
 const stage=$("stage"), ctx0=document.createElement("canvas").getContext("2d");
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const N=d=>(+d.toFixed(3)).toString();
-const fontCss=size=>`${font.weight} ${size}px ${font.family}`;
+// The four variants every rule talks about -> a weight on the font's weight axis.
+//   thin = lightest, regular = the main weight, bold = 60% of the way from regular to heaviest, heavy = heaviest.
+// A font with no weight axis gets the same weight for every variant (the effect is simply not visible).
+function wt(variant){
+  switch(variant){
+    case "thin": return font.min;
+    case "bold": return Math.round(font.reg+(font.max-font.reg)*0.6);
+    case "heavy": return font.max;
+    default: return font.reg;
+  }
+}
+const fontCss=(size,variant="regular")=>`${wt(variant)} ${size}px ${font.family}`;
+ 
+/* ---------- entries: a piece of text plus the styling the rules gave it ---------- */
+let entryCounter=0;
+function makeEntry(raw,salt=0){
+  const text=raw.replace(/\s+/g," ").trim();
+  const runs=[];                                   // neighbouring letters with the same style are merged into one run
+  for(const g of styleText(text,salt)){
+    const last=runs[runs.length-1];
+    if(last&&last.v===g.v&&last.fill===g.fill) last.t+=g.c;
+    else runs.push({t:g.c,v:g.v,fill:g.fill});
+  }
+  return {id:++entryCounter,text,runs};
+}
  
 function rngFor(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
  
 function setFontCss(){
-  $("fontcss").textContent=`#stage text,.label,#marquee .marquee-item{font-family:${font.family};font-weight:${font.weight};font-variation-settings:${font.vs};font-feature-settings:${font.fs}}`;
+  $("fontcss").textContent=`#stage text,.label,#marquee .marquee-item{font-family:${font.family};font-variation-settings:${font.vs};font-feature-settings:${font.fs}}#marquee .marquee-item{font-weight:${wt("bold")}}`;
   renderMarquee();   // text widths change with the font, so rebuild the loop
 }
  
@@ -111,7 +141,9 @@ async function applyFont(){
   if(!loaded) return;
   const vals={};
   document.querySelectorAll("#axes input").forEach(r=>vals[r.dataset.tag]=+r.value);
-  const vs=Object.keys(vals).length?Object.entries(vals).map(([k,v])=>`"${k}" ${v}`).join(", "):"normal";
+  // the weight axis is driven per letter by the variants, so it is left out of the fixed settings
+  const fixed=Object.entries(vals).filter(([k])=>k!=="wght");
+  const vs=fixed.length?fixed.map(([k,v])=>`"${k}" ${v}`).join(", "):"normal";
   const feats=[...document.querySelectorAll("#features input:checked")].map(c=>`"${c.dataset.feat}" 1`);
   const fs=feats.length?feats.join(", "):"normal";
   const w=loaded.axes.find(a=>a.tag==="wght");
@@ -124,7 +156,8 @@ async function applyFont(){
     await face.load();
     if(loaded.face) document.fonts.delete(loaded.face);
     document.fonts.add(face); loaded.face=face;
-    font={family:`"${fam}",sans-serif`,weight:w?vals.wght:400,vs,fs};
+    const reg=w?vals.wght:400;
+    font={family:`"${fam}",sans-serif`,reg,min:w?w.min:reg,max:w?w.max:reg,vs,fs};
     setFontCss(); layout();
   }catch(e){ setStatus("This font could not be loaded: "+e.message); }
 }
@@ -141,14 +174,26 @@ $("file").addEventListener("change",async e=>{
 $("reset").addEventListener("click",()=>{
   if(loaded&&loaded.face) document.fonts.delete(loaded.face);
   loaded=null; font={...DEFAULT_FONT}; setFontCss(); buildControls();
-  $("fontname").textContent="Using Arial Black"; $("reset").hidden=true; layout();
+  $("fontname").textContent=DEFAULT_NAME; $("reset").hidden=true; layout();
 });
  
 /* ---------- logo shape ---------- */
-function measure(text,size){
-  ctx0.font=fontCss(size);
+function measure(text,size,variant="heavy"){      // used for the big headline and its labels, which are always heavy
+  ctx0.font=fontCss(size,variant);
   const m=ctx0.measureText(text);
   return {L:m.actualBoundingBoxLeft,R:m.actualBoundingBoxRight,A:m.actualBoundingBoxAscent,D:m.actualBoundingBoxDescent,W:m.actualBoundingBoxLeft+m.actualBoundingBoxRight};
+}
+// Same measurements for a styled entry: its runs sit side by side, each in its own weight.
+function measureRuns(runs,size){
+  let x=0,L=0,R=0,A=0,D=0;
+  runs.forEach((r,i)=>{
+    ctx0.font=fontCss(size,r.v);
+    const m=ctx0.measureText(r.t), blank=!r.t.trim();
+    if(i===0) L=m.actualBoundingBoxLeft;
+    if(!blank){R=Math.max(R,x+m.actualBoundingBoxRight);A=Math.max(A,m.actualBoundingBoxAscent);D=Math.max(D,m.actualBoundingBoxDescent)}
+    x+=m.width;
+  });
+  return {L,R,A,D,W:L+R};
 }
 function buildLogo(w,h){
   const ms=LogoLines.map(t=>measure(t,100));
@@ -173,7 +218,7 @@ function buildMask(logo,gw,gh,inv){
   const margin=Math.max(Gap*2,logo.capPx*0.04);
   cx.lineWidth=margin*2; cx.lineJoin="round";
   for(const l of logo.lines){
-    cx.font=fontCss(l.fs);
+    cx.font=fontCss(l.fs,"heavy");
     if(inv) cx.strokeText(l.text,l.x,l.y);   // thickens the letters by `margin` on every side
     cx.fillText(l.text,l.x,l.y);
   }
@@ -201,7 +246,7 @@ function blockRect(free,gw,gh,r,pad){
  
 /* ---------- word stamps ---------- */
 function makeStamp(word,size,vert){
-  const m=measure(word,size), iw=m.W, ih=m.A+m.D;
+  const m=measureRuns(word.runs,size), iw=m.W, ih=m.A+m.D;
   if(iw<=0||ih<=0) return null;
   const pad=Gap/2+1;
   const pw=(vert?ih:iw)+2*pad, ph=(vert?iw:ih)+2*pad;
@@ -211,9 +256,14 @@ function makeStamp(word,size,vert){
   const cx=c.getContext("2d",{willReadFrequently:true});
   cx.scale(1/Cell,1/Cell); cx.translate(ox,oy);
   if(vert) cx.rotate(-Math.PI/2);
-  cx.font=fontCss(size); cx.fillStyle="#fff"; cx.strokeStyle="#fff";
+  cx.fillStyle="#fff"; cx.strokeStyle="#fff";
   cx.lineWidth=Gap; cx.lineJoin="round";
-  cx.strokeText(word,0,0); cx.fillText(word,0,0);
+  let pen=0;
+  for(const r of word.runs){
+    cx.font=fontCss(size,r.v);
+    cx.strokeText(r.t,pen,0); cx.fillText(r.t,pen,0);
+    pen+=cx.measureText(r.t).width;
+  }
   const px=cx.getImageData(0,0,sw,sh).data, dx=[], dy=[];
   for(let y=0;y<sh;y++)for(let x=0;x<sw;x++) if(px[(y*sw+x)*4+3]>40){dx.push(x);dy.push(y)}
   if(!dx.length) return null;
@@ -257,11 +307,11 @@ function computeLayout(list){
       let k=0,fails=0,wi=0,count=0;
       const maxWords=inverted?MaxWordsInverted:MaxWords;
       while(count<maxWords&&fails<list.length){
-        const word=list[wi++%list.length]; let placed=false;
+        const word=list[wi++%list.length]; let placed=false;   // word = an entry (text + styled runs)
         for(let kk=k;kk<=maxK&&!placed;kk++){
           const size=start*Math.pow(Shrink,kk), firstV=rng()<0.35;
           for(let o=0;o<2&&!placed;o++){
-            const vert=o===0?firstV:!firstV, key=word+"|"+kk+"|"+vert;
+            const vert=o===0?firstV:!firstV, key=word.id+"|"+kk+"|"+vert;
             let st=cache.get(key);
             if(st===undefined){st=makeStamp(word,size,vert);cache.set(key,st)}
             if(st&&tryPlace(st,free,cells,gw,gh,rng,placements)){placed=true;k=kk}
@@ -286,23 +336,29 @@ function labelHtml(r,text,inv){
   if(r.w<20||r.h<10) return "";
   const pad=r.h*0.08, iw=r.w-4-2*pad, ih=r.h-4-2*pad;
   if(iw<=0||ih<=0) return "";
-  ctx0.font=fontCss(100);
+  ctx0.font=fontCss(100,"heavy");
   const m=ctx0.measureText(text);
   const lh=(m.fontBoundingBoxAscent+m.fontBoundingBoxDescent)||100;
   const fs=100*Math.min(iw/m.width,ih/lh);
-  return `<div class="label${inv?" inv":""}" style="left:${N(r.x)}px;top:${N(r.y)}px;width:${N(r.w)}px;height:${N(r.h)}px;padding:${N(pad)}px;font-size:${N(fs)}px">${text}</div>`;
+  return `<div class="label${inv?" inv":""}" style="left:${N(r.x)}px;top:${N(r.y)}px;width:${N(r.w)}px;height:${N(r.h)}px;padding:${N(pad)}px;font-size:${N(fs)}px;font-weight:${wt("heavy")}">${text}</div>`;
 }
  
 function render(w,h,logo,placements){
   let svg=`<svg width="${N(w)}" height="${N(h)}" viewBox="0 0 ${N(w)} ${N(h)}">`;
   if(!placements.length){
-    svg+=`<g fill="#262626">`+logo.lines.map(l=>`<text x="${N(l.x)}" y="${N(l.y)}" font-size="${N(l.fs)}">${l.text}</text>`).join("")+`</g>`;
+    svg+=`<g fill="#262626" font-weight="${wt("heavy")}">`+logo.lines.map(l=>`<text x="${N(l.x)}" y="${N(l.y)}" font-size="${N(l.fs)}">${l.text}</text>`).join("")+`</g>`;
   }else{
     // inverted: a faint copy of the letters sits behind the words so the shape reads even when sparse
-    if(inverted) svg+=`<g fill="#1c1c1c">`+logo.lines.map(l=>`<text x="${N(l.x)}" y="${N(l.y)}" font-size="${N(l.fs)}">${l.text}</text>`).join("")+`</g>`;
+    if(inverted) svg+=`<g fill="#1c1c1c" font-weight="${wt("heavy")}">`+logo.lines.map(l=>`<text x="${N(l.x)}" y="${N(l.y)}" font-size="${N(l.fs)}">${l.text}</text>`).join("")+`</g>`;
     svg+=`<g fill="#fff">`+placements.map(p=>{
       const t=`translate(${N(p.x)} ${N(p.y)})`+(p.st.vert?" rotate(-90)":"");
-      return `<text transform="${t}" font-size="${N(p.st.size)}">${esc(p.st.word)}</text>`;
+      const size=p.st.size, halo=N(Math.max(1.2,size*0.04));
+      // one tspan per run: each carries its own weight (variant) and colour. Dark colours get a light outline so they show on the dark stage.
+      const runs=p.st.word.runs.map(r=>{
+        const f=r.fill||"#fff", dark=isDark(f);
+        return `<tspan font-weight="${wt(r.v)}" fill="${f}"${dark?` stroke="#fff" stroke-width="${halo}" stroke-linejoin="round" paint-order="stroke"`:""}>${esc(r.t)}</tspan>`;
+      }).join("");
+      return `<text transform="${t}" font-size="${N(size)}" style="white-space:pre">${runs}</text>`;
     }).join("")+`</g>`;
   }
   svg+="</svg>";
@@ -328,11 +384,11 @@ function showFit(over){
 }
 function updateFit(){
   clearTimeout(fitTimer);
-  const text=inputEl.value.trim().toUpperCase();
+  const text=inputEl.value.replace(/\s+/g," ").trim();
   let over=false;
   if(text){
-    const r=computeLayout([...words,text]);
-    over=!!r.logo&&!r.placedWords.has(text);
+    const entry=makeEntry(text,words.length), r=computeLayout([...words,entry]);
+    over=!!r.logo&&!r.placedWords.has(entry);
   }
   showFit(over);
 }
@@ -343,25 +399,25 @@ function clearStaleStatus(){ if(statusEl.textContent!==TOO_LONG) setStatus(""); 
 inputEl.addEventListener("input",()=>{clearStaleStatus(); scheduleFitCheck();});
  
 $("ok").addEventListener("click",()=>{
-  const text=inputEl.value.trim().toUpperCase();
+  const text=inputEl.value.replace(/\s+/g," ").trim();
   if(!text) return;
  
-  if(containsProfanity(text)) {
-    setStatus("Please enter a valid word without profanity.");
-    inputEl.focus();
-    return;
-  }
+  // 1. is it fit to show? (profanity, sensitive topics, personal details, spam)
+  const check=validateInput(text);
+  if(!check.ok){ setStatus(check.reason); inputEl.focus(); return; }
  
-  words.push(text);
-  if(layout().has(text)){ inputEl.value=""; setStatus(""); showFit(false); }
+  // 2. apply the styling rules, then 3. try to fit it into the letters
+  const entry=makeEntry(text,words.length);
+  words.push(entry);
+  if(layout().has(entry)){ inputEl.value=""; setStatus(""); showFit(false); }
   else{ words.pop(); layout(); showFit(true); }
   inputEl.focus();
 });
 inputEl.addEventListener("keydown",e=>{if(e.key==="Enter")$("ok").click()});
-$("sample").addEventListener("click",()=>{words=SAMPLE.slice();setStatus("");layout()});
+$("sample").addEventListener("click",()=>{words=SAMPLE.map((t,i)=>makeEntry(t,i));setStatus("");layout()});
  
-// Invert: switch between words inside the letters and words around them. The word list is kept,
-// so toggling back and forth just re-lays out the same words.
+// Invert: switch between words inside the letters and words around them. The word list (and each
+// entry's styling) is kept, so toggling back and forth just re-lays out the same words.
 $("invert").addEventListener("click",()=>{
   inverted=!inverted;
   $("invert").setAttribute("aria-pressed",String(inverted));
@@ -414,7 +470,7 @@ $("undo").addEventListener("click",()=>{
   if(!words.length) return;
   askPassword({
     title:"Undo",
-    message:"Enter the password to remove the most recent word (\u201c"+words[words.length-1]+"\u201d) from the canvas.",
+    message:"Enter the password to remove the most recent word (\u201c"+words[words.length-1].text+"\u201d) from the canvas.",
     confirm:"Undo",
     onSuccess:undoWord
   });
@@ -510,6 +566,8 @@ $("clearinput").addEventListener("click",()=>{
       if(gotResult&&$("input").value.trim()){
         setVoice("Heard: \u201c"+$("input").value+"\u201d");
         updateFit();            // check the final text straight away, no waiting for the delay
+        const check=validateInput($("input").value);
+        if(!check.ok){ setStatus(check.reason); setVoice("Heard something that can't be shown.",true); }
         $("input").focus();
       }
       rec=null;
@@ -614,4 +672,8 @@ showNewSentence();   // start with one generated sentence displayed, marquee emp
  
 new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(layout,150)}).observe(stage);
 setFontCss();
-(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(layout);
+// The default font is only fetched once something asks for it, so ask now and draw when it has arrived.
+Promise.resolve(document.fonts&&document.fonts.load?document.fonts.load('400 20px "Archivo VF"'):null)
+  .catch(()=>{})
+  .then(()=>document.fonts&&document.fonts.ready)
+  .then(layout);
