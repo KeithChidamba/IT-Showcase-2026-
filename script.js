@@ -366,10 +366,10 @@ function labelHtml(r,text,inv,variant="heavy"){
 function render(w,h,logo,placements){
   let svg=`<svg width="${N(w)}" height="${N(h)}" viewBox="0 0 ${N(w)} ${N(h)}">`;
   if(!placements.length){
-    svg+=`<g fill="#262626" font-weight="${wt("heavy")}">`+logo.lines.map(l=>`<text x="${N(l.x)}" y="${N(l.y)}" font-size="${N(l.fs)}">${l.text}</text>`).join("")+`</g>`;
+    svg+=`<g fill="#2b2b2b" font-weight="${wt("heavy")}">`+logo.lines.map(l=>`<text x="${N(l.x)}" y="${N(l.y)}" font-size="${N(l.fs)}">${l.text}</text>`).join("")+`</g>`;
   }else{
     // inverted: a faint copy of the letters sits behind the words so the shape reads even when sparse
-    if(inverted) svg+=`<g fill="#1c1c1c" font-weight="${wt("heavy")}">`+logo.lines.map(l=>`<text x="${N(l.x)}" y="${N(l.y)}" font-size="${N(l.fs)}">${l.text}</text>`).join("")+`</g>`;
+    if(inverted) svg+=`<g fill="#9b9b9b" font-weight="${wt("heavy")}">`+logo.lines.map(l=>`<text x="${N(l.x)}" y="${N(l.y)}" font-size="${N(l.fs)}">${l.text}</text>`).join("")+`</g>`;
     svg+=`<g fill="#fff">`+placements.map(p=>{
       const t=`translate(${N(p.x)} ${N(p.y)})`+(p.st.vert?" rotate(-90)":"");
       const size=p.st.size, halo=N(Math.max(1.2,size*0.04));
