@@ -18,6 +18,7 @@
 <div class="group">
 <h2 class="section-title">Text input</h2>
 <div class="row">
+<<<<<<< HEAD
 <input type="text" id="input" placeholder="Type a word or phrase" aria-label="Word or phrase">
 <button class="primary" id="ok">OK</button>
 <button id="sample">Fill sample</button>
@@ -31,11 +32,26 @@
 <button id="undo" title="Remove the most recently added word (password required)">Undo</button>
 <button id="clear" title="Remove every word from the canvas (password required)">Clear Canvas</button>
 <button id="invert" type="button" aria-pressed="false" title="Place the words around the letters instead of inside them">Invert</button>
+=======
+  <input type="text" id="input" placeholder="Type a word or phrase" aria-label="Word or phrase">
+  <button class="primary" id="ok">OK</button>
+  <button id="sample">Fill sample</button>
+  <button id="clearinput" title="Empty the text box only (the canvas is left as it is)">Clear input</button>
+  <span id="status" role="status"></span>
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
+</div>
+</div>
+<div class="group">
+<h2 class="section-title">Canvas controls</h2>
+<div class="row">
+  <button id="undo" title="Remove the most recently added word (password required)">Undo</button>
+  <button id="clear" title="Remove every word from the canvas (password required)">Clear Canvas</button>
 </div>
 </div>
 <div class="group">
 <h2 class="section-title">Voice input</h2>
 <div class="row" id="voicerow">
+<<<<<<< HEAD
 <button id="mic" type="button" aria-pressed="false" title="Speak a word or phrase">
 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg>
 <span id="miclabel">Speak</span>
@@ -47,6 +63,19 @@
 <option value="en-US">English (US)</option>
 </select>
 <span id="voiceStatus" role="status"></span>
+=======
+  <button id="mic" type="button" aria-pressed="false" title="Speak a word or phrase">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg>
+    <span id="miclabel">Speak</span>
+  </button>
+  <select id="voicelang" aria-label="Speech language">
+    <option value="en-ZA">English (ZA)</option>
+    <option value="af-ZA">Afrikaans</option>
+    <option value="en-GB">English (UK)</option>
+    <option value="en-US">English (US)</option>
+  </select>
+  <span id="voiceStatus" role="status"></span>
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 </div>
 </div>
 <div class="group">
@@ -79,6 +108,7 @@
 <footer id="marquee" role="marquee" aria-label="Added sentences">
 <div class="marquee-track" id="marqueeTrack"></div>
 </footer>
+<<<<<<< HEAD
  
 <dialog id="pwdialog" aria-labelledby="pwtitle">
 <form id="pwform" autocomplete="off">
@@ -93,6 +123,22 @@
 </form>
 </dialog>
  
+=======
+
+<dialog id="pwdialog" aria-labelledby="pwtitle">
+  <form id="pwform" autocomplete="off">
+    <h2 id="pwtitle">Clear Canvas</h2>
+    <p id="pwmsg">Enter the password to remove every word from the canvas.</p>
+    <input type="text" id="pwinput" placeholder="Password" aria-label="Password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div id="pwerror" role="alert"></div>
+    <div class="row dialog-actions">
+      <button type="button" id="pwcancel">Cancel</button>
+      <button type="submit" class="primary" id="pwok">Clear Canvas</button>
+    </div>
+  </form>
+</dialog>
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 <!-- Include your scripts properly -->
 <script src="profanityfilter.js" type="module" defer></script>
 <script src="script.js" type="module" defer></script>

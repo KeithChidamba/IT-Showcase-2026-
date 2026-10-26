@@ -9,9 +9,15 @@ const LogoLines=["BE","YOND","THE","FRAME"];
 const SAMPLE=["BEYOND","THE","FRAME","DESIGN","CREATE","IDEAS","VISION","BOLD","FUTURE","STUDIO","ART","MAKE","SHAPE","MOTION","LIGHT","SPACE","COLOR","STORY","CRAFT","DREAM","BUILD"];
 const SKIP=new Set("ccmp locl mark mkmk kern rlig rclt curs dist abvm blwm abvs blws calt liga clig init medi fina isol rphf pref half akhn nukt abvf blwf cjct haln pres psts vatu cfar rvrn".split(" "));
 const AXIS_NAMES={wght:"Weight",wdth:"Width",slnt:"Slant",ital:"Italic",opsz:"Optical size"};
+<<<<<<< HEAD
  
 const CanvasPassword="H@ckathon";   // password asked for by the Undo and Clear Canvas buttons - change it here
  
+=======
+
+const CanvasPassword="H@ckathon";   // password asked for by the Undo and Clear Canvas buttons - change it here
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 const DEFAULT_FONT={family:'"Arial Black","Segoe UI Black",Arial,sans-serif',weight:900,vs:"normal",fs:"normal"};
 let font={...DEFAULT_FONT};
 let words=[];
@@ -245,7 +251,11 @@ function computeLayout(list){
   const w=stage.clientWidth, h=stage.clientHeight;
   if(w<100||h<100) return {placedWords,logo:null};
   const logo=buildLogo(w,h), placements=[];
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
   if(list.length){
     const gw=Math.ceil(w/Cell), gh=Math.ceil(h/Cell);
     const free=buildMask(logo,gw,gh,inverted);
@@ -255,8 +265,12 @@ function computeLayout(list){
       const start=logo.capPx*0.45;
       const maxK=start<=MinFont?0:Math.floor(Math.log(MinFont/start)/Math.log(Shrink));
       let k=0,fails=0,wi=0,count=0;
+<<<<<<< HEAD
       const maxWords=inverted?MaxWordsInverted:MaxWords;
       while(count<maxWords&&fails<list.length){
+=======
+      while(count<MaxWords&&fails<list.length){
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
         const word=list[wi++%list.length]; let placed=false;
         for(let kk=k;kk<=maxK&&!placed;kk++){
           const size=start*Math.pow(Shrink,kk), firstV=rng()<0.35;
@@ -272,6 +286,17 @@ function computeLayout(list){
     }
   }
   return {placedWords,w,h,logo,placements};
+<<<<<<< HEAD
+=======
+}
+function layout(){
+  refreshCanvasButtons();
+  const r=computeLayout(words);
+  if(!r.logo) return r.placedWords;
+  render(r.w,r.h,r.logo,r.placements);
+  scheduleFitCheck();   // the stage (size, font, words) changed, so re-test what is in the input box
+  return r.placedWords;
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 }
 function layout(){
   refreshCanvasButtons();
@@ -313,7 +338,11 @@ function render(w,h,logo,placements){
 const TOO_LONG="That text is too long to fit inside the letters.";
 const statusEl=$("status"), inputEl=$("input");
 function setStatus(t){statusEl.textContent=t}
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 // Live "does it fit?" check. The limit is not a fixed number of characters: it depends on the stage
 // size and the loaded font, so this runs the same layout the OK button runs, on the words already
 // on the stage plus the text in the box (nothing is drawn). Over the limit, the text turns red and
@@ -341,11 +370,19 @@ function scheduleFitCheck(){clearTimeout(fitTimer);fitTimer=setTimeout(updateFit
 // is left for the fit check to remove, so it doesn't flicker while typing.
 function clearStaleStatus(){ if(statusEl.textContent!==TOO_LONG) setStatus(""); }
 inputEl.addEventListener("input",()=>{clearStaleStatus(); scheduleFitCheck();});
+<<<<<<< HEAD
  
 $("ok").addEventListener("click",()=>{
   const text=inputEl.value.trim().toUpperCase();
   if(!text) return;
  
+=======
+
+$("ok").addEventListener("click",()=>{
+  const text=inputEl.value.trim().toUpperCase();
+  if(!text) return;
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
   if(containsProfanity(text)) {
     setStatus("Please enter a valid word without profanity.");
     inputEl.focus();
@@ -359,6 +396,7 @@ $("ok").addEventListener("click",()=>{
 });
 inputEl.addEventListener("keydown",e=>{if(e.key==="Enter")$("ok").click()});
 $("sample").addEventListener("click",()=>{words=SAMPLE.slice();setStatus("");layout()});
+<<<<<<< HEAD
  
 // Invert: switch between words inside the letters and words around them. The word list is kept,
 // so toggling back and forth just re-lays out the same words.
@@ -367,6 +405,58 @@ $("invert").addEventListener("click",()=>{
   $("invert").setAttribute("aria-pressed",String(inverted));
   $("invert").textContent=inverted?"Inverted":"Invert";
   layout();
+=======
+
+function clearStage(){words=[];setStatus("");layout()}
+function undoWord(){words.pop();layout()}   // removes the most recently added word
+
+// Undo is only useful when there is a word to remove.
+function refreshCanvasButtons(){ $("undo").disabled=!words.length; }
+refreshCanvasButtons();
+
+// Undo and Clear Canvas both ask for the password first, using one shared dialog. The box is a plain
+// text field on purpose (not type="password"), so what is typed stays readable instead of dots.
+const pwDialog=$("pwdialog"), pwInput=$("pwinput"), pwError=$("pwerror");
+let pwAction=null;   // what to do once the right password has been entered
+function askPassword({title,message,confirm,onSuccess}){
+  pwAction=onSuccess;
+  $("pwtitle").textContent=title; $("pwmsg").textContent=message; $("pwok").textContent=confirm;
+  pwInput.value=""; pwError.textContent="";
+  pwDialog.showModal();
+  pwInput.focus();
+}
+$("clear").addEventListener("click",()=>askPassword({
+  title:"Clear Canvas",
+  message:"Enter the password to remove every word from the canvas.",
+  confirm:"Clear Canvas",
+  onSuccess:clearStage
+}));
+$("undo").addEventListener("click",()=>{
+  if(!words.length) return;
+  askPassword({
+    title:"Undo",
+    message:"Enter the password to remove the most recent word (\u201c"+words[words.length-1]+"\u201d) from the canvas.",
+    confirm:"Undo",
+    onSuccess:undoWord
+  });
+});
+$("pwform").addEventListener("submit",e=>{
+  e.preventDefault();
+  if(pwInput.value.trim()===CanvasPassword){
+    const action=pwAction; pwAction=null;
+    pwDialog.close();
+    if(action) action();
+  }
+  else{ pwError.textContent="Incorrect password. Try again."; pwInput.focus(); pwInput.select(); }
+});
+$("pwcancel").addEventListener("click",()=>pwDialog.close());
+pwDialog.addEventListener("close",()=>{ pwAction=null; });   // Cancel / Esc: forget the pending action
+
+$("clearinput").addEventListener("click",()=>{
+  inputEl.value=""; setStatus(""); $("voiceStatus").textContent="";
+  showFit(false);
+  inputEl.focus();
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 });
  
 /* ---------- menu show / hide ---------- */
@@ -450,7 +540,11 @@ $("clearinput").addEventListener("click",()=>{
   const mic=$("mic"), label=$("miclabel"), voiceStatus=$("voiceStatus");
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const setVoice=(t,isError)=>{voiceStatus.textContent=t; voiceStatus.classList.toggle("error",!!isError)};
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
   if(!SR){
     mic.disabled=true; $("voicelang").disabled=true;
     setVoice("Voice input isn't supported in this browser. Try Chrome, Edge or Safari.",true);
@@ -487,7 +581,7 @@ $("clearinput").addEventListener("click",()=>{
     rec.continuous=true;        // keep listening through pauses; our timer decides when to stop
     rec.maxAlternatives=1;
     gotResult=false;
- 
+    
     rec.onstart=()=>{setListening(true); setVoice("Listening…"); setStatus(""); updateFit();};
     rec.onresult=e=>{
       // in continuous mode e.results holds every phrase heard since start, so rebuild the whole text
@@ -514,7 +608,11 @@ $("clearinput").addEventListener("click",()=>{
       }
       rec=null;
     };
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
     try{ rec.start(); }catch(err){ setVoice("Couldn't start the microphone.",true); rec=null; }
   }
  
@@ -535,7 +633,11 @@ let currentSentence="";
  
 const sentenceKey=s=>s.trim().replace(/\s+/g," ").toLowerCase();
 function setSentenceStatus(t,isError){const el=$("sentenceStatus"); el.textContent=t; el.classList.toggle("error",!!isError)}
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 // The Add button is disabled whenever the displayed sentence is already in the marquee.
 function refreshAddState(msg){
   const dup=addedKeys.has(sentenceKey(currentSentence));

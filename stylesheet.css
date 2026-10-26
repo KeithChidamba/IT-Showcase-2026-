@@ -354,11 +354,19 @@ body.menu-hidden #menutoggle {
   color: var(--mut);
   font-size: 13px;
 }
+<<<<<<< HEAD
  
 #sentenceStatus.error {
   color: var(--danger);
 }
  
+=======
+
+#sentenceStatus.error {
+  color: var(--danger);
+}
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -451,11 +459,19 @@ select {
   color: var(--mut);
   font-size: 13px;
 }
+<<<<<<< HEAD
  
 #voiceStatus.error {
   color: var(--danger);
 }
  
+=======
+
+#voiceStatus.error {
+  color: var(--danger);
+}
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 /* ---------- marquee footer ---------- */
 /* Purely visual: it scrolls by itself and cannot be scrolled, hovered, selected or clicked. */
 #marquee {
@@ -505,12 +521,20 @@ select {
   border-radius: 50%;
   background: var(--mut);
 }
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 /* ---------- input box: text turns red when it is too long to fit ---------- */
 #input.over {
   color: var(--danger);
 }
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 /* ---------- password dialog (Clear stage) ---------- */
 #pwdialog {
   width: min(380px, calc(100vw - 48px));
@@ -522,40 +546,71 @@ select {
   border-radius: 16px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
+<<<<<<< HEAD
  
 #pwdialog::backdrop {
   background: rgba(0, 0, 0, 0.5);
 }
  
+=======
+
+#pwdialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 #pwform {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 #pwtitle {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
 }
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 #pwdialog p {
   margin: 0;
   color: var(--mut);
   font-size: 13px;
 }
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 #pwdialog input[type=text] {
   width: 100%;
   box-sizing: border-box;
 }
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
 #pwerror {
   min-height: 1.5em;
   color: var(--danger);
   font-size: 13px;
 }
+<<<<<<< HEAD
  
 .dialog-actions {
   justify-content: flex-end;
 }
+=======
+
+.dialog-actions {
+  justify-content: flex-end;
+}
+>>>>>>> 3f7751b464a9b82c40eb86a38db39a04a07653b9
