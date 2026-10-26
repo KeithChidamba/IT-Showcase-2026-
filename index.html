@@ -3,7 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Initial Layout</title>
+<title>Beyond the Frame</title>
+<!-- Archivo variable font (weight 100-900): every rule variant (thin, regular, bold, heavy...) is a weight on this axis -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@100..900&display=swap">
 <link rel="stylesheet" href="stylesheet.css">
 <style id="fontcss"></style>
 </head>
@@ -55,7 +59,7 @@
 <div class="row">
 <label class="filebtn">Load font (.woff .ttf .otf)<input type="file" id="file" accept=".woff,.woff2,.ttf,.otf" hidden></label>
 <button id="reset" hidden>Use default font</button>
-<span id="fontname">Using Arial Black</span>
+<span id="fontname">Using Archivo (variable font)</span>
 </div>
 <div class="row" id="axes"></div>
 <div class="row" id="features"></div>
@@ -93,8 +97,7 @@
 </form>
 </dialog>
  
-<!-- Include your scripts properly -->
-<script src="profanityfilter.js" type="module" defer></script>
-<script src="script.js" type="module" defer></script>
+<!-- script.js imports validate.js, profanityfilter.js, sentence.js and Rules.js itself -->
+<script src="script.js" type="module"></script>
 </body>
 </html>

@@ -95,7 +95,7 @@ Tick **Add automatically** and the phrase goes straight onto the display as soon
 1. Click **Load font** and pick a `.woff`, `.woff2`, `.ttf` or `.otf` file.
 2. The whole display, and the marquee, switch to your font. The name is shown next to the buttons.
 3. If it's a **variable font**, sliders appear for its axes (Weight, Width, Slant and so on). If it has **OpenType features**, toggles appear for those too.
-4. Click **Use default font** to go back to Arial Black.
+4. Click **Use default font** to go back to Archivo, the variable font the styling rules use.
 
 > `.woff2` files load and display fine, but their axes and features can't be inspected, so the sliders and toggles won't appear for them. Use `.woff`, `.ttf` or `.otf` if you want those controls.
 
@@ -117,6 +117,8 @@ IT-Showcase-2026-/
 ├── index.html              The page and all the controls
 ├── stylesheet.css          Layout, theme (light and dark) and styling
 ├── script.js               Word packing, font loading, voice input, marquee
+├── Rules.js                The text styling rules (colours and font variants per letter)
+├── validate.js             Checks typed or spoken text before it is shown
 ├── sentence.js             The random sentence generator
 ├── profanityfilter.js      English + Afrikaans word list and checker
 └── README.md               You are here

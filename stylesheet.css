@@ -331,7 +331,7 @@ body.menu-hidden #menutoggle {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 400;   /* regular is the main variant; script.js sets each letter's weight from the rules */
   cursor: default;
 }
  
@@ -492,6 +492,7 @@ select {
   padding: 0 16px;
   white-space: nowrap;
   font-size: 16px;
+  font-weight: 400;   /* regular is the main variant; script.js sets each letter's weight from the rules */
   /* The canvas always draws uppercase text, and display fonts like the loaded one often have
      no lowercase letterforms, so the marquee shows uppercase too. Stored sentences are untouched. */
   text-transform: uppercase;

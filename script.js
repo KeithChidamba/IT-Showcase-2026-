@@ -15,10 +15,10 @@ const AXIS_NAMES={wght:"Weight",wdth:"Width",slnt:"Slant",ital:"Italic",opsz:"Op
  
 const CanvasPassword="H@ckathon";   // password asked for by the Undo and Clear Canvas buttons - change it here
  
-// Default font: Archivo, a variable font (fonts/Archivo-Variable.woff, declared in stylesheet.css) whose weight axis
-// runs 100-900. min/reg/max are the weights the four variants are built from (see wt() below).
+// Default font: Archivo, a variable font (loaded from Google Fonts in index.html) whose weight axis
+// runs 100-900. min/reg/max are the weights the variants are built from (see wt() below).
 const DEFAULT_NAME="Using Archivo (variable font)";
-const DEFAULT_FONT={family:'"Archivo VF","Arial Black","Segoe UI Black",Arial,sans-serif',min:100,reg:400,max:900,vs:"normal",fs:"normal"};
+const DEFAULT_FONT={family:'"Archivo","Arial Black","Segoe UI Black",Arial,sans-serif',min:100,reg:400,max:900,vs:"normal",fs:"normal"};
 let font={...DEFAULT_FONT};
 let words=[];
 let loaded=null;   // {buf, axes, feats, name, face, fam}
@@ -28,36 +28,56 @@ const $=id=>document.getElementById(id);
 const stage=$("stage"), ctx0=document.createElement("canvas").getContext("2d");
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const N=d=>(+d.toFixed(3)).toString();
-// The four variants every rule talks about -> a weight on the font's weight axis.
+// The variants the rules talk about -> a weight on the font's weight axis.
 //   thin = lightest, regular = the main weight, bold = 60% of the way from regular to heaviest, heavy = heaviest.
+//   The in-between steps (used by "dyslexia") sit evenly between those. With Archivo (100-900, regular 400)
+//   this gives thin 100, extralight 200, light 300, regular 400, medium 500, semibold 600, bold 700, extrabold 800, heavy 900.
 // A font with no weight axis gets the same weight for every variant (the effect is simply not visible).
+const LIGHT_STEPS={thin:0,extralight:1/3,light:2/3};                       // fraction of the way from min to regular
+const HEAVY_STEPS={medium:0.2,semibold:0.4,bold:0.6,extrabold:0.8,heavy:1}; // fraction of the way from regular to max
 function wt(variant){
-  switch(variant){
-    case "thin": return font.min;
-    case "bold": return Math.round(font.reg+(font.max-font.reg)*0.6);
-    case "heavy": return font.max;
-    default: return font.reg;
-  }
+  if(variant in LIGHT_STEPS) return Math.round(font.min+(font.reg-font.min)*LIGHT_STEPS[variant]);
+  if(variant in HEAVY_STEPS) return Math.round(font.reg+(font.max-font.reg)*HEAVY_STEPS[variant]);
+  return font.reg;
 }
 const fontCss=(size,variant="regular")=>`${wt(variant)} ${size}px ${font.family}`;
  
 /* ---------- entries: a piece of text plus the styling the rules gave it ---------- */
 let entryCounter=0;
+// Neighbouring letters with the same style are merged into one run. upper=false keeps the original
+// letter case (used for the sentence preview and the marquee).
+function styledRuns(text,salt=0,upper=true){
+  const runs=[];
+  styleText(text,salt).forEach((g,i)=>{
+    const ch=upper?g.c:text[i], last=runs[runs.length-1];
+    if(last&&last.v===g.v&&last.fill===g.fill) last.t+=ch;
+    else runs.push({t:ch,v:g.v,fill:g.fill});
+  });
+  return runs;
+}
 function makeEntry(raw,salt=0){
   const text=raw.replace(/\s+/g," ").trim();
-  const runs=[];                                   // neighbouring letters with the same style are merged into one run
-  for(const g of styleText(text,salt)){
-    const last=runs[runs.length-1];
-    if(last&&last.v===g.v&&last.fill===g.fill) last.t+=g.c;
-    else runs.push({t:g.c,v:g.v,fill:g.fill});
+  return {id:++entryCounter,text,runs:styledRuns(text,salt)};
+}
+// Fills an HTML element with one <span> per styled run (weight + colour from the rules). The runs sit
+// inside a single wrapper span, so a flex parent (#sentence, .marquee-item) doesn't drop the spaces.
+function fillStyled(el,text,salt=0){
+  el.textContent="";
+  const wrap=document.createElement("span"); el.appendChild(wrap);
+  for(const r of styledRuns(text,salt,false)){
+    const s=document.createElement("span");
+    s.textContent=r.t;
+    s.style.fontWeight=wt(r.v);
+    if(r.fill) s.style.color=r.fill;
+    wrap.appendChild(s);
   }
-  return {id:++entryCounter,text,runs};
 }
  
 function rngFor(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
  
 function setFontCss(){
-  $("fontcss").textContent=`#stage text,.label,#marquee .marquee-item{font-family:${font.family};font-variation-settings:${font.vs};font-feature-settings:${font.fs}}#marquee .marquee-item{font-weight:${wt("bold")}}`;
+  $("fontcss").textContent=`#stage text,.label,#sentence,#marquee .marquee-item{font-family:${font.family};font-variation-settings:${font.vs};font-feature-settings:${font.fs}}`;
+  if(currentSentence) fillStyled($("sentence"),currentSentence);   // weights depend on the font
   renderMarquee();   // text widths change with the font, so rebuild the loop
 }
  
@@ -332,15 +352,15 @@ function layout(){
   return r.placedWords;
 }
  
-function labelHtml(r,text,inv){
+function labelHtml(r,text,inv,variant="heavy"){
   if(r.w<20||r.h<10) return "";
   const pad=r.h*0.08, iw=r.w-4-2*pad, ih=r.h-4-2*pad;
   if(iw<=0||ih<=0) return "";
-  ctx0.font=fontCss(100,"heavy");
+  ctx0.font=fontCss(100,variant);
   const m=ctx0.measureText(text);
   const lh=(m.fontBoundingBoxAscent+m.fontBoundingBoxDescent)||100;
   const fs=100*Math.min(iw/m.width,ih/lh);
-  return `<div class="label${inv?" inv":""}" style="left:${N(r.x)}px;top:${N(r.y)}px;width:${N(r.w)}px;height:${N(r.h)}px;padding:${N(pad)}px;font-size:${N(fs)}px;font-weight:${wt("heavy")}">${text}</div>`;
+  return `<div class="label${inv?" inv":""}" style="left:${N(r.x)}px;top:${N(r.y)}px;width:${N(r.w)}px;height:${N(r.h)}px;padding:${N(pad)}px;font-size:${N(fs)}px;font-weight:${wt(variant)}">${text}</div>`;
 }
  
 function render(w,h,logo,placements){
@@ -362,7 +382,7 @@ function render(w,h,logo,placements){
     }).join("")+`</g>`;
   }
   svg+="</svg>";
-  stage.innerHTML=svg+labelHtml(logo.showcase,"SHOWCASE",false)+labelHtml(logo.year,"2026",true);
+  stage.innerHTML=svg+labelHtml(logo.showcase,"SHOWCASE",false)+labelHtml(logo.year,"2026",true,"thin");   // the number 2026 = thin variant
 }
  
 /* ---------- UI ---------- */
@@ -604,7 +624,7 @@ function refreshAddState(msg){
 }
 function showNewSentence(){
   currentSentence=generateSentence();
-  $("sentence").textContent=currentSentence;
+  fillStyled($("sentence"),currentSentence);
   refreshAddState();
 }
  
@@ -617,7 +637,7 @@ let marqueeAnim=null, marqueeGroupW=0;
 function makeGroup(repeats){
   const g=document.createElement("div"); g.className="marquee-group";
   for(let r=0;r<repeats;r++) for(const s of addedSentences){
-    const el=document.createElement("span"); el.className="marquee-item"; el.textContent=s;
+    const el=document.createElement("span"); el.className="marquee-item"; fillStyled(el,s);
     g.appendChild(el);
   }
   return g;
@@ -673,7 +693,7 @@ showNewSentence();   // start with one generated sentence displayed, marquee emp
 new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(layout,150)}).observe(stage);
 setFontCss();
 // The default font is only fetched once something asks for it, so ask now and draw when it has arrived.
-Promise.resolve(document.fonts&&document.fonts.load?document.fonts.load('400 20px "Archivo VF"'):null)
+Promise.resolve(document.fonts&&document.fonts.load?document.fonts.load('400 20px "Archivo"'):null)
   .catch(()=>{})
   .then(()=>document.fonts&&document.fonts.ready)
   .then(layout);
