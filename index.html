@@ -69,10 +69,9 @@
 </div>
 <div class="group">
 <h2 class="section-title">Marquee additions</h2>
-<section id="sentencepanel" aria-label="Random sentence">
-<div id="sentence" aria-live="polite"></div>
+<section id="sentencepanel" aria-label="Add text to the marquee">
+<input type="text" id="marqueeinput" placeholder="Type text for the marquee" aria-label="Text to add to the marquee" autocomplete="off">
 <div class="row sentence-actions">
-<button id="generate">Generate</button>
 <button class="primary" id="add">Add</button>
 </div>
 <span id="sentenceStatus" role="status"></span>
@@ -105,7 +104,7 @@
 </form>
 </dialog>
  
-<!-- script.js imports validate.js, profanityfilter.js, sentence.js and Rules.js itself -->
+<!-- script.js imports validate.js, profanityfilter.js and Rules.js itself -->
 <script src="script.js" type="module"></script>
 </body>
 </html>

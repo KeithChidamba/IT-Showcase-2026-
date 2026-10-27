@@ -1,5 +1,4 @@
 import { validateInput } from './validate.js';
-import { generateSentence } from './sentence.js';
 import { styleText, isDark } from './Rules.js';
 import { UndoList } from './undolist.js';
  
@@ -545,7 +544,7 @@ function removeItem(key){
     if(i>=0) addedSentences.splice(i,1);
     addedKeys.delete(sentenceKey(item.text));
     renderMarquee();
-    refreshAddState();          // the sentence may be the one on display, so Add can be enabled again
+    setSentenceStatus("");
   }
   renderUndoList();
 }
@@ -675,29 +674,15 @@ $("clearinput").addEventListener("click",()=>{
   $("voicelang").addEventListener("change",()=>{ if(rec) rec.abort(); });
 })();
  
-/* ---------- random sentence + marquee ---------- */
+/* ---------- marquee additions: type text, press Add, it joins the scrolling marquee ---------- */
 const MarqueeSpeed=70;          // pixels per second
-const addedSentences=[];        // sentences in the marquee, in the order they were added
+const addedSentences=[];        // texts in the marquee, in the order they were added
 const addedKeys=new Set();      // normalised copies, used for the duplicate check
-let currentSentence="";
- 
+const marqueeInput=$("marqueeinput");
+
 const sentenceKey=s=>s.trim().replace(/\s+/g," ").toLowerCase();
 function setSentenceStatus(t,isError){const el=$("sentenceStatus"); el.textContent=t; el.classList.toggle("error",!!isError)}
- 
-// The Add button is disabled whenever the displayed sentence is already in the marquee.
-function refreshAddState(msg){
-  const dup=addedKeys.has(sentenceKey(currentSentence));
-  $("add").disabled=!currentSentence||dup;
-  if(msg) setSentenceStatus(msg);
-  else if(dup) setSentenceStatus("This sentence is already in the marquee.",true);
-  else setSentenceStatus("");
-}
-function showNewSentence(){
-  currentSentence=generateSentence();
-  fillStyled($("sentence"),currentSentence,0,DEFAULT_FONT);   // the sentence box always uses the default font
-  refreshAddState();
-}
- 
+
 // Seamless infinite loop: the sentences are laid out as one group, repeated until the group is at
 // least as wide as the footer, and two identical groups sit side by side. The track slides left by
 // exactly one group width and jumps back, so the join is invisible. Each sentence is only stored
@@ -742,24 +727,27 @@ function renderMarquee(){
   marqueeAnim.currentTime=((offsetPx%marqueeGroupW)/marqueeGroupW)*duration;
 }
  
-$("generate").addEventListener("click",showNewSentence);
-$("add").addEventListener("click",()=>{
-  if(!currentSentence) return;
-  const key=sentenceKey(currentSentence);
-  if(addedKeys.has(key)){ refreshAddState(); return; }
-  addedKeys.add(key); addedSentences.push(currentSentence);
-  recordSentence(currentSentence);
+function addToMarquee(){
+  const text=marqueeInput.value.replace(/\s+/g," ").trim();
+  if(!text){ setSentenceStatus("Type something to add first.",true); return; }
+  const key=sentenceKey(text);
+  if(addedKeys.has(key)){ setSentenceStatus("That text is already in the marquee.",true); return; }
+  addedKeys.add(key); addedSentences.push(text);
+  recordSentence(text);
   renderMarquee();
-  refreshAddState("Added to the marquee.");
-});
- 
+  marqueeInput.value="";
+  setSentenceStatus("Added to the marquee.");
+}
+$("add").addEventListener("click",addToMarquee);
+marqueeInput.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addToMarquee(); } });
+marqueeInput.addEventListener("input",()=>setSentenceStatus(""));
+
 let marqueeWidth=0;
 new ResizeObserver(()=>{
   const w=$("marquee").clientWidth;
   if(w!==marqueeWidth){ marqueeWidth=w; renderMarquee(); }
 }).observe($("marquee"));
  
-showNewSentence();   // start with one generated sentence displayed, marquee empty
  
 new ResizeObserver(()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(layout,150)}).observe(stage);
 setFontCss();

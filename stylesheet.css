@@ -384,34 +384,25 @@ body.menu-hidden #menutoggle {
   font-size: 12px;
 }
  
-#sentence {
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
+/* #sentencepanel prefix beats the generic "#topbar input[type=text]" rule (width/flex), which let the input overflow the panel */
+#sentencepanel #marqueeinput {
   box-sizing: border-box;
-  background: var(--bg);
-  color: var(--fg);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  /* Always the default font: a loaded font only changes the canvas and the scrolling marquee */
-  font-family: "Archivo", "Arial Black", "Segoe UI Black", Arial, sans-serif;
-  font-size: 16px;
-  font-weight: 400;   /* regular is the main variant; script.js sets each letter's weight from the rules */
-  cursor: default;
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 48px;
+  font-size: 15px;
 }
- 
+
 .sentence-actions {
   flex-wrap: nowrap;
-}
- 
-#generate {
-  flex: 1;
-  justify-content: center;
+  justify-content: flex-start;
 }
  
 #add {
-  min-width: 96px;
+  min-width: 0;
+  padding: 0 12px;
   justify-content: center;
 }
  

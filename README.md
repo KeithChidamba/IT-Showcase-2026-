@@ -5,7 +5,7 @@
 ### IT Showcase 2026
 
 **Type a word. Watch it become part of the picture.**
-Words you add pack themselves inside the giant letters of *BEYOND THE FRAME*, while a marquee of silly sentences scrolls along the bottom.
+Words you add pack themselves inside the giant letters of *BEYOND THE FRAME*, while a marquee of your own text scrolls along the bottom.
 
 <br>
 
@@ -29,7 +29,7 @@ Words you add pack themselves inside the giant letters of *BEYOND THE FRAME*, wh
 | 🔤 **Word art** | Every word you add is fitted inside the letterforms of the headline, sized to fill the space. |
 | 🎙️ **Voice input** | Say a word or phrase instead of typing it. Speech-to-text runs in the browser, with no library. |
 | 🅰️ **Bring your own font** | Load any `.woff`, `.ttf` or `.otf`. Variable fonts get live sliders and OpenType feature toggles. |
-| 🎠 **Sentence marquee** | Generate random sentences and add them to an endlessly looping ticker. |
+| 🎠 **Sentence marquee** | Type your own text and add it to an endlessly looping ticker. |
 | 🧼 **Profanity filter** | English and Afrikaans filtering on everything typed or spoken. |
 
 ---
@@ -101,11 +101,10 @@ Tick **Add automatically** and the phrase goes straight onto the display as soon
 
 ### 🎠 Marquee additions
 
-1. Click **Generate** for a random sentence, such as *"The sheep hugs the goat."*
-2. Like it? Click **Add** and it joins the scrolling marquee at the bottom.
-3. Not feeling it? Click **Generate** again for a new one.
+1. Type any text into the **Marquee additions** box.
+2. Click **Add** (or press **Enter**) and it joins the scrolling marquee at the bottom.
 
-The same sentence can't be added twice. If it's already in the marquee, **Add** is greyed out and a message tells you so. The marquee loops forever by itself and can't be clicked or scrolled.
+The same text can't be added twice. If it's already in the marquee, a message tells you so. The marquee loops forever by itself and can't be clicked or scrolled.
 
 ---
 
@@ -119,7 +118,6 @@ IT-Showcase-2026-/
 ├── script.js               Word packing, font loading, voice input, marquee
 ├── Rules.js                The text styling rules (colours and font variants per letter)
 ├── validate.js             Checks typed or spoken text before it is shown
-├── sentence.js             The random sentence generator
 ├── profanityfilter.js      English + Afrikaans word list and checker
 └── README.md               You are here
 ```
@@ -134,7 +132,6 @@ IT-Showcase-2026-/
 | How fast the marquee scrolls | `MarqueeSpeed` in `script.js` (pixels per second) |
 | The sample words | `SAMPLE` near the top of `script.js` |
 | The headline text | `LogoLines` near the top of `script.js` |
-| The animals and verbs in the sentences | `nouns` and `verbs` in `sentence.js` |
 | Which words are blocked | The lists in `profanityfilter.js` |
 | Colours and spacing | The variables at the top of `stylesheet.css` |
 
