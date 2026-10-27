@@ -78,6 +78,13 @@
 <span id="sentenceStatus" role="status"></span>
 </section>
 </div>
+<div class="group">
+<h2 class="section-title">Undo list</h2>
+<section id="undopanel" aria-label="Added words and sentences">
+<p id="undoempty">Nothing added yet.</p>
+<ol id="undolist"></ol>
+</section>
+</div>
 </div>
 <div id="stage"></div>
 </div>
@@ -89,7 +96,7 @@
 <form id="pwform" autocomplete="off">
 <h2 id="pwtitle">Clear Canvas</h2>
 <p id="pwmsg">Enter the password to remove every word from the canvas.</p>
-<input type="text" id="pwinput" placeholder="Password" aria-label="Password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+<input type="password" id="pwinput" placeholder="Password" aria-label="Password" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false">
 <div id="pwerror" role="alert"></div>
 <div class="row dialog-actions">
 <button type="button" id="pwcancel">Cancel</button>

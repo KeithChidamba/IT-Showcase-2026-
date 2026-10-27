@@ -1,6 +1,7 @@
 import { validateInput } from './validate.js';
 import { generateSentence } from './sentence.js';
 import { styleText, isDark } from './Rules.js';
+import { UndoList } from './undolist.js';
  
 const Cell=2, Gap=3, Shrink=0.94, MinFont=7, Attempts=300, MaxWords=1500, Seed=12345;
 const MaxWordsInverted=3000;   // inverted mode fills the (much larger) space around the letters
@@ -21,6 +22,7 @@ const DEFAULT_NAME="Using Archivo (variable font)";
 const DEFAULT_FONT={family:'"Archivo","Arial Black","Segoe UI Black",Arial,sans-serif',min:100,reg:400,max:900,vs:"normal",fs:"normal"};
 let font={...DEFAULT_FONT};
 let words=[];
+const history=new UndoList();   // every added word and sentence, in order (feeds the undo list in the menu)
 let loaded=null;   // {buf, axes, feats, name, face, fam}
 let famCounter=0;
  
@@ -429,12 +431,17 @@ $("ok").addEventListener("click",()=>{
   // 2. apply the styling rules, then 3. try to fit it into the letters
   const entry=makeEntry(text,words.length);
   words.push(entry);
-  if(layout().has(entry)){ inputEl.value=""; setStatus(""); showFit(false); }
+  if(layout().has(entry)){ inputEl.value=""; setStatus(""); showFit(false); recordWord(entry); }
   else{ words.pop(); layout(); showFit(true); }
   inputEl.focus();
 });
 inputEl.addEventListener("keydown",e=>{if(e.key==="Enter")$("ok").click()});
-$("sample").addEventListener("click",()=>{words=SAMPLE.map((t,i)=>makeEntry(t,i));setStatus("");layout()});
+$("sample").addEventListener("click",()=>{
+  forgetAllWords();
+  words=SAMPLE.map((t,i)=>makeEntry(t,i));
+  words.forEach(recordWord);
+  setStatus("");layout();
+});
  
 // Invert: switch between words inside the letters and words around them. The word list (and each
 // entry's styling) is kept, so toggling back and forth just re-lays out the same words.
@@ -462,15 +469,19 @@ function setMenu(open){
 $("menutoggle").addEventListener("click",()=>setMenu(document.body.classList.contains("menu-hidden")));
 setMenu(!window.matchMedia("(max-width: 900px)").matches);
  
-function clearStage(){words=[];setStatus("");layout()}
-function undoWord(){words.pop();layout()}   // removes the most recently added word
+function clearStage(){forgetAllWords();words=[];setStatus("");layout()}
+function undoWord(){                          // removes the most recently added word
+  const entry=words.pop();
+  if(entry){ history.remove(wordKey(entry)); renderUndoList(); }
+  layout();
+}
  
 // Undo is only useful when there is a word to remove.
 function refreshCanvasButtons(){ $("undo").disabled=!words.length; }
 refreshCanvasButtons();
  
-// Undo and Clear Canvas both ask for the password first, using one shared dialog. The box is a plain
-// text field on purpose (not type="password"), so what is typed stays readable instead of dots.
+// Undo, Clear Canvas and Remove all ask for the password first, using one shared dialog. The box is a
+// password field (index.html), so what is typed always shows as dots.
 const pwDialog=$("pwdialog"), pwInput=$("pwinput"), pwError=$("pwerror");
 let pwAction=null;   // what to do once the right password has been entered
 function askPassword({title,message,confirm,onSuccess}){
@@ -506,6 +517,65 @@ $("pwform").addEventListener("submit",e=>{
 });
 $("pwcancel").addEventListener("click",()=>pwDialog.close());
 pwDialog.addEventListener("close",()=>{ pwAction=null; });   // Cancel / Esc: forget the pending action
+ 
+/* ---------- undo list: every added word and sentence, each with its own Remove button ---------- */
+// Keys: "w<entry id>" for a word on the canvas, "s<normalised text>" for a sentence in the marquee.
+// Looking an item up and unlinking it from the history is O(1) (UndoList keeps a Map of key -> node).
+const wordKey=entry=>"w"+entry.id;
+const sentenceListKey=text=>"s"+sentenceKey(text);
+ 
+function recordWord(entry){ history.append(wordKey(entry),{type:"word",text:entry.text,entry}); renderUndoList(); }
+function recordSentence(text){ history.append(sentenceListKey(text),{type:"sentence",text}); renderUndoList(); }
+ 
+// Clear Canvas and Fill sample replace every word on the canvas, so their history goes too (sentences stay).
+function forgetAllWords(){
+  const keys=[]; for(const [k,item] of history) if(item.type==="word") keys.push(k);
+  keys.forEach(k=>history.remove(k));
+  renderUndoList();
+}
+ 
+function removeItem(key){
+  const item=history.remove(key);
+  if(!item) return;
+  if(item.type==="word"){
+    words=words.filter(w=>w!==item.entry);
+    layout();
+  }else{
+    const i=addedSentences.indexOf(item.text);
+    if(i>=0) addedSentences.splice(i,1);
+    addedKeys.delete(sentenceKey(item.text));
+    renderMarquee();
+    refreshAddState();          // the sentence may be the one on display, so Add can be enabled again
+  }
+  renderUndoList();
+}
+ 
+function renderUndoList(){
+  const list=$("undolist"), empty=$("undoempty");
+  list.textContent="";
+  for(const [key,item] of history){
+    const li=document.createElement("li");
+    const tag=document.createElement("span"); tag.className="undo-type"; tag.textContent=item.type==="word"?"Word":"Sentence";
+    const txt=document.createElement("span"); txt.className="undo-text"; txt.textContent=item.text; txt.title=item.text;
+    const btn=document.createElement("button"); btn.type="button"; btn.textContent="Remove"; btn.dataset.key=key;
+    btn.setAttribute("aria-label","Remove \u201c"+item.text+"\u201d");
+    li.append(tag,txt,btn); list.appendChild(li);
+  }
+  empty.hidden=history.size>0;
+}
+ 
+// One click handler for every Remove button. Like Undo and Clear Canvas, it asks for the password first.
+$("undolist").addEventListener("click",e=>{
+  const btn=e.target.closest("button[data-key]"); if(!btn) return;
+  const key=btn.dataset.key, item=history.get(key); if(!item) return;
+  askPassword({
+    title:"Remove",
+    message:"Enter the password to remove \u201c"+item.text+"\u201d from the "+(item.type==="word"?"canvas.":"marquee."),
+    confirm:"Remove",
+    onSuccess:()=>removeItem(key)
+  });
+});
+renderUndoList();
  
 $("clearinput").addEventListener("click",()=>{
   inputEl.value=""; setStatus(""); $("voiceStatus").textContent="";
@@ -678,6 +748,7 @@ $("add").addEventListener("click",()=>{
   const key=sentenceKey(currentSentence);
   if(addedKeys.has(key)){ refreshAddState(); return; }
   addedKeys.add(key); addedSentences.push(currentSentence);
+  recordSentence(currentSentence);
   renderMarquee();
   refreshAddState("Added to the marquee.");
 });
